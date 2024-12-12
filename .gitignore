@@ -2,3 +2,4 @@ backend/clm/contracts/__pycache__/
 backend/clm/clm/__pycache__
 backend/clm/contracts/*.sqlite3
 backend/env
+backend/venv
