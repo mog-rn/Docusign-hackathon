@@ -45,6 +45,8 @@ INSTALLED_APPS = [
     'authentication',
     'organizations',
     'contracts',
+
+    'drf_yasg',
 ]
 
 AUTH_USER_MODEL = 'core.User'
