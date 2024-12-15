@@ -44,6 +44,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
 def __str__(self):
-    return f"Email: {self.email}\n" \
-           f"Name: {self.first_name} {self.last_name}\n" \
-           f"Organization: {self.organization.name if self.organization else 'None'}"
+    return f'Email: {self.email}\n' \
+           f'Name: {self.first_name} {self.last_name}\n' \
+           f'Organization: {self.organization.name if self.organization else "None"}'

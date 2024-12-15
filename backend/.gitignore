@@ -4,3 +4,4 @@ venv
 ___pycache__/
 env
 trial.py
+todo.md
