@@ -1,0 +1,14 @@
+{
+    "admin": [
+        "create_organization",
+        "delete_organization",
+        "assign_roles",
+        "manage_users",
+        "update_permissions"
+    ],
+    "user": [
+        "view_organization",
+        "view_users",
+        "submit_requests"
+    ]
+}

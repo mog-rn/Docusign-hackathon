@@ -8,6 +8,9 @@ from authentication.utils import login_response_constructor
 
 
 class RegisterView(APIView):
+    """
+    Register a new user and return the access and refresh tokens.
+    """
     def post(self, request, *args, **kwargs):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():

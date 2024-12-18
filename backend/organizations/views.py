@@ -2,11 +2,13 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from django.shortcuts import render
 from rest_framework.permissions import IsAuthenticated
+
+from core.models import User
 from .models import Organization, UserRole, Role, Domain
 
 from core.permissions import IsMainAdmin
 from organizations.permissions import IsOrganizationAdmin
-from organizations.serializer import OrganizationSerializer, AssignRoleSerializer
+from organizations.serializer import OrganizationSerializer, AssignRoleSerializer, RoleSerializer, UserSerializer
 
 
 class OrganizationCreateView(generics.GenericAPIView):
@@ -18,6 +20,22 @@ class OrganizationCreateView(generics.GenericAPIView):
 
         if serializer.is_valid():
             organization = serializer.save()
+
+            request.user.organization = organization
+            request.user.is_organization_admin = True
+            request.user.save()
+
+            admin_role, _ = Role.objects.get_or_create(
+                name="admin",
+                organization=organization,
+            )
+
+            UserRole.objects.create(
+                user=request.user,
+                organization=organization,
+                role=admin_role
+            )
+
             return Response(
                 {"message": "Organization created successfully!", "organization": serializer.data},
                 status=status.HTTP_201_CREATED
@@ -25,6 +43,12 @@ class OrganizationCreateView(generics.GenericAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 class UserRolesView(generics.GenericAPIView):
+    """
+    Retrieve the roles of a user in an organization.
+    """
+    serializer_class = RoleSerializer
+    permission_classes = [IsAuthenticated]
+    
     def get(self, request, organizationId, userId):
         """
         Retrieve the user's role in the organization.
@@ -71,3 +95,128 @@ class OrganizationListView(generics.ListAPIView):
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     permission_classes = [IsAuthenticated, IsMainAdmin]
+
+class OrganizationDeleteView(generics.DestroyAPIView):
+    """
+    Delete an organization.
+    Only authenticated users with the 'main_admin' role can access this view.
+    """
+    permission_classes = [IsAuthenticated, IsMainAdmin]
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response(
+            {"message": "Organization deleted successfully!"},
+            status=status.HTTP_204_NO_CONTENT
+        )
+    
+class AvailableRolesView(generics.GenericAPIView):
+    """
+    Retrieve all roles available in an organization.
+    """
+    permission_classes = [IsAuthenticated, IsOrganizationAdmin]
+    serializer_class = RoleSerializer
+
+    def get(self, request, organizationId):
+        try:
+            organization = Organization.objects.get(id=organizationId)
+        except Organization.DoesNotExist:
+                    return Response(
+                        {"message": "Organization does not exist."},
+                        status=status.HTTP_404_NOT_FOUND
+                    )
+        
+        roles = Role.objects.filter(organization=organization)
+        
+        if not roles.exists():
+            return Response(
+                {"message": "No roles found for the organization."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = self.get_serializer(roles, many=True)
+        return Response({"roles": serializer.data}, status=status.HTTP_200_OK)
+        
+class UpdatePermissionsView(generics.GenericAPIView):
+    """
+    Update permissions for a role in an organization.
+    """
+    permission_classes = [IsAuthenticated, IsMainAdmin]
+    serializer_class = RoleSerializer
+
+    def patch(self, request, organizationId, roleId):
+        try:
+            role = Role.objects.get(id=roleId, organization_id=organizationId)
+        except Role.DoesNotExist:
+            return Response(
+                {"message": "Role does not exist."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = self.get_serializer(role, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(
+                {"message": "Role permissions updated successfully!"},
+                status=status.HTTP_200_OK
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class OrganizationUsersView(generics.GenericAPIView):
+    """
+    Retrieve all users in an organization along with their roles.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get(self, request, organizationId):
+        """
+        Return the list of users in the specified organization.
+        """
+        try:
+            # Ensure the organization exists
+            organization = Organization.objects.get(id=organizationId)
+        except Organization.DoesNotExist:
+            return Response(
+                {"message": "Organization does not exist."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Fetch all users directly associated with the organization
+        users = User.objects.filter(organization=organization).select_related('organization')
+
+        if not users.exists():
+            return Response(
+                {"message": "No users found for the organization."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # Build user data with roles
+        users_data = []
+        for user in users:
+            # Get the roles of the user in the organization
+            user_roles = UserRole.objects.filter(user=user, organization=organization).select_related('role')
+            roles = [
+                {
+                    "id": user_role.role.id,
+                    "name": user_role.role.name,
+                    "permissions": user_role.role.permissions
+                }
+                for user_role in user_roles
+            ]
+
+            users_data.append({
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "is_organization_admin": user.is_organization_admin,
+                "roles": roles,  # Include roles
+                "created_at": user.created_at
+            })
+
+        return Response({"users": users_data}, status=status.HTTP_200_OK)
+ 

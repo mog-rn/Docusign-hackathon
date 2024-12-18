@@ -1,4 +1,6 @@
 from rest_framework import serializers
+
+from core.models import User
 from .models import Organization, Domain, Role
 from django.db import transaction
 
@@ -131,3 +133,18 @@ class AssignRoleSerializer(serializers.Serializer):
             role=role
         )
         return user_role
+    
+class UpdatePermissionsSerializer(serializers.ModelSerializer):
+    permissions = serializers.ListField(
+        child=serializers.CharField(max_length=100)
+    )
+
+    class Meta:
+        model = Role
+        fields = ['permissions']
+        read_only_fields = ['id', 'name']
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name', 'is_organization_admin', 'created_at']
