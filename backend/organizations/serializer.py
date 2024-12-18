@@ -5,7 +5,7 @@ from django.db import transaction
 class DomainSerializer(serializers.ModelSerializer):
     class Meta:
         model = Domain
-        fields = ['id', 'domain', 'created_at']
+        fields = ['id', 'domain', 'created_at', 'updated_at']
         read_only_fields = ['id']
 
     def validate_domain(self, value):
@@ -22,7 +22,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Organization
-        fields = ['id', 'name', 'created_at', 'domains']
+        fields = ['id', 'name', 'created_at', 'domains', 'updated_at']
         read_only_fields = ['id', 'created_at']
 
     def validate_name(self, value):

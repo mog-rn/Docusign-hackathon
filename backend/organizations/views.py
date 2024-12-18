@@ -61,3 +61,13 @@ class AssignRoleView(generics.GenericAPIView):
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class OrganizationListView(generics.ListAPIView):
+    """
+    View to retrieve all organizations from the database.
+    Only authenticated users with the 'main_admin' role can access this view.
+    """
+    queryset = Organization.objects.all()
+    serializer_class = OrganizationSerializer
+    permission_classes = [IsAuthenticated, IsMainAdmin]

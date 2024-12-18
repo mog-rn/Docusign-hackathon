@@ -1,7 +1,8 @@
 from django.urls import path
-from .views import OrganizationCreateView, UserRolesView, AssignRoleView
+from .views import OrganizationCreateView, OrganizationListView, UserRolesView, AssignRoleView
 
 urlpatterns = [
+    path('', OrganizationListView.as_view(), name='list-organizations'),
     path('create/', OrganizationCreateView.as_view(), name='create-organization'),
     path(
         '<uuid:organizationId>/users/<uuid:userId>/roles',
