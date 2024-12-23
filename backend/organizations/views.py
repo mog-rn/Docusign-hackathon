@@ -21,20 +21,25 @@ class OrganizationCreateView(generics.GenericAPIView):
         if serializer.is_valid():
             organization = serializer.save()
 
-            request.user.organization = organization
-            request.user.is_organization_admin = True
-            request.user.save()
-
             admin_role, _ = Role.objects.get_or_create(
                 name="admin",
                 organization=organization,
             )
 
+            # Add the main admin 
+            main_admin = User.objects.get(is_main_admin=True)
             UserRole.objects.create(
-                user=request.user,
+                user=main_admin,
                 organization=organization,
                 role=admin_role
             )
+
+            if request.user != main_admin:
+                UserRole.objects.create(
+                    user=request.user,
+                    organization=organization,
+                    role=admin_role
+                )
 
             return Response(
                 {"message": "Organization created successfully!", "organization": serializer.data},
@@ -186,37 +191,38 @@ class OrganizationUsersView(generics.GenericAPIView):
             )
 
         # Fetch all users directly associated with the organization
-        users = User.objects.filter(organization=organization).select_related('organization')
+        users_roles = UserRole.objects.filter(
+            organization=organization
+        ).select_related('user', 'role')
 
-        if not users.exists():
+        if not users_roles.exists():
             return Response(
                 {"message": "No users found for the organization."},
                 status=status.HTTP_404_NOT_FOUND
             )
 
         # Build user data with roles
-        users_data = []
-        for user in users:
+        users_data = {}
+        for user_role in users_roles:
             # Get the roles of the user in the organization
-            user_roles = UserRole.objects.filter(user=user, organization=organization).select_related('role')
-            roles = [
-                {
-                    "id": user_role.role.id,
-                    "name": user_role.role.name,
-                    "permissions": user_role.role.permissions
+            user = user_role.user
+            if user.id not in users_data:
+                users_data[user.id] = {
+                    "id": user.id,
+                    "email": user.email,
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "is_organization_admin": user.is_organization_admin,
+                    "roles": [],
+                    "created_at": user.created_at
                 }
-                for user_role in user_roles
-            ]
-
-            users_data.append({
-                "id": user.id,
-                "email": user.email,
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "is_organization_admin": user.is_organization_admin,
-                "roles": roles,  # Include roles
-                "created_at": user.created_at
+            
+            users_data[user.id]["roles"].append({
+                "id": user_role.role.id,
+                "name": user_role.role.name,
+                "permissions": user_role.role.permissions
             })
 
-        return Response({"users": users_data}, status=status.HTTP_200_OK)
- 
+        return Response({
+            "users": list(users_data.values())},
+            status=status.HTTP_200_OK)
