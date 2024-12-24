@@ -63,7 +63,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         )
 
         # Assign a default role to the user
-        default_role, _ = Role.objects.get_or_create(
+        default_role, created = Role.objects.get_or_create(
             name="user", 
             organization=organization
         )
@@ -84,13 +84,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         response_data = login_response_constructor(user)
         return response_data
     
-class InvitationSerializer(serializers.Serializer):
+class InvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
         fields = ['id', 'email', 'organization', 'role', 'created_at', 'expires_at']
         read_only_fields = ['id', 'created_at', 'expires_at']
 
     def create(self, validated_data):
-        validated_data['expires_at'] = datetime.now() + timedelta(days=7)
+        validated_data['expires_at'] = datetime.now() + timedelta(days=7) # Expiration time of 7 days
         validated_data['invited_by'] = self.context['request'].user
         return super().create(validated_data)

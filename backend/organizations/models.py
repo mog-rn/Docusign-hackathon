@@ -7,6 +7,9 @@ class Organization(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        db_table = 'organizations'
+
     def __str__(self):
         return self.name
     
@@ -26,6 +29,9 @@ class Role(models.Model):
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='roles')
     permissions = models.JSONField(default=list)
 
+    class Meta:
+        unique_together = ['name', 'organization']
+        
     def __str__(self):
         return self.name
     

@@ -3,16 +3,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+from authentication.models import Invitation
 from authentication.serializers import InvitationSerializer, RegisterSerializer, CustomTokenObtainPairSerializer
 from authentication.utils import login_response_constructor
 from organizations.permissions import IsOrganizationAdmin
 from rest_framework.permissions import IsAuthenticated
 from django.core.mail import send_mail
+from datetime import timezone
 
 class RegisterView(generics.CreateAPIView):
     """
     Register a new user and return the access and refresh tokens.
     """
+    serializer_class = RegisterSerializer
+    
     def post(self, request, *args, **kwargs):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
@@ -36,13 +40,16 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 class InviteUserView(generics.CreateAPIView):
+    """
+    Invite a user to join an organization.
+    """
     permission_classes = [IsAuthenticated, IsOrganizationAdmin]
     serializer_class = InvitationSerializer
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            invitation = serializer.save()
 
             invitation_url = f"{settings.FRONTEND_URL}/register?token={invitation.id}"
             send_mail(
@@ -57,5 +64,45 @@ class InviteUserView(generics.CreateAPIView):
                 "message": "Invitation sent successfully!",
                 "invitation": serializer.data
                 }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class AcceptInvitationView(generics.GenericAPIView):
+    """
+    Accept an invitation to join an organization.
+    """
+    serializer_class = RegisterSerializer
+
+    def post(self, request, token):
+        try:
+            invitation = Invitation.objects.get(
+                id=token,
+                accepted=False,
+                expires_at__gte=timezone.now()
+            )
+        except Invitation.DoesNotExist:
+            return Response(
+                {"message": "Invitation does not exist."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.save()
+
+            # Create User role for the invited user
+            UserRole.objects.create(
+                user=user,
+                organization=invitation.organization,
+                role=invitation.role
+            )
+
+            # Mark the invitation as accepted
+            invitation.accepted = True
+            invitation.save()
+
+            response_data = login_response_constructor(user)
+            return Response(response_data, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
