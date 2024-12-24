@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from datetime import datetime, timedelta
 
+from authentication.models import Invitation
 from authentication.utils import login_response_constructor
 from core.models import User
 from organizations.models import Domain
@@ -81,3 +83,14 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = self.user
         response_data = login_response_constructor(user)
         return response_data
+    
+class InvitationSerializer(serializers.Serializer):
+    class Meta:
+        model = Invitation
+        fields = ['id', 'email', 'organization', 'role', 'created_at', 'expires_at']
+        read_only_fields = ['id', 'created_at', 'expires_at']
+
+    def create(self, validated_data):
+        validated_data['expires_at'] = datetime.now() + timedelta(days=7)
+        validated_data['invited_by'] = self.context['request'].user
+        return super().create(validated_data)
