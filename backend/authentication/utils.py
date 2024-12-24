@@ -1,4 +1,8 @@
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.core.mail import send_mail
+from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 def login_response_constructor(user):
     refresh = RefreshToken.for_user(user)
@@ -46,3 +50,26 @@ def login_response_constructor(user):
             "organization": organization_data,
         }
     }
+
+def send_invitation_email(invitation, invitation_url):
+    """
+    Send invitaton email to the user.
+    """
+    context = {
+        'invitation': invitation,
+        'invitation_url': invitation_url,
+        'organization_name': invitation.organization.name
+    }
+
+    # HTML template for the email
+    html_message = render_to_string('email/invitation.html', context)
+    plain_message = strip_tags(html_message)
+
+    send_mail(
+        subject=f'Invitation to join {invitation.organization.name}',
+        message=plain_message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[invitation.email],
+        html_message=html_message,
+        fail_silently=False,
+    )

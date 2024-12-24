@@ -52,14 +52,15 @@ class InviteUserView(generics.CreateAPIView):
             invitation = serializer.save()
 
             invitation_url = f"{settings.FRONTEND_URL}/register?token={invitation.id}"
-            send_mail(
-                'Invitation to join the organization',
-                f"You have been invited to join the organization. Click here to accept: {invitation_url}",
-                settings.DEFAULT_FROM_EMAIL,
-                [invitation.email],
-                fail_silently=False,
-            )
 
+            try:
+                send_invitation_email(invitation, invitation_url)
+            except Exception as e:
+                return Response(
+                    {"message": "Failed to send invitation email."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
             return Response({
                 "message": "Invitation sent successfully!",
                 "invitation": serializer.data
