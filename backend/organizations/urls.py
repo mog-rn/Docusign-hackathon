@@ -1,5 +1,9 @@
 from django.urls import path
-from .views import AvailableRolesView, OrganizationCreateView, OrganizationDeleteView, OrganizationListView, OrganizationUsersView, UpdatePermissionsView, UserRolesView, AssignRoleView
+
+from organizations.views.organization_views import OrganizationCreateView, OrganizationDeleteView, OrganizationListView
+from organizations.views.permissions_views import UpdatePermissionsView
+from organizations.views.role_views import AssignRoleView, AvailableRolesView, UserRolesView
+from organizations.views.user_views import OrganizationUsersView
 
 urlpatterns = [
     path('', OrganizationListView.as_view(), name='list_organizations'),
