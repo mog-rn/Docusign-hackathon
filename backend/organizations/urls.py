@@ -19,7 +19,7 @@ urlpatterns = [
         name='get_roles'
     ),
     path(
-        '<uuid:organizationId>/roles/<uuid:roleId>/permissions',
+        '<uuid:organizationId>/roles/<int:roleId>/permissions/',
         UpdatePermissionsView.as_view(),
         name='update_permissions'
     ),
@@ -29,12 +29,12 @@ urlpatterns = [
         name='get_organization_users'
     ),
     path(
-        '<uuid:organizationId>/users/<uuid:userId>/roles',
+        '<uuid:organizationId>/users/<int:userId>/roles',
         UserRolesView.as_view(),
         name='get_user_roles'
     ),
     path(
-        '<uuid:organizationId>/users/<uuid:userId>/roles/assign',
+        '<uuid:organizationId>/users/<int:userId>/roles/assign',
         AssignRoleView.as_view(),
         name='assign_role'
     )

@@ -64,8 +64,45 @@ class AssignRoleView(generics.GenericAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             role = serializer.validated_data['roleId']
+
+            # Check if the role belongs to the organization
+            if role.organization_id != organizationId:
+                return Response(
+                    {"message": "Role does not belong to the organization."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Check if the role has been already assigned to the user
+            if UserRole.objects.filter(
+                user_id=userId,
+                organization_id=organizationId,
+                role_id=role.id
+            ).exists():
+                return Response(
+                    {"message": "Role already assigned to the user."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Check if the user belongs to the organization
+            if not UserRole.objects.filter(
+                user_id=userId,
+                organization_id=organizationId
+            ).exists():
+                return Response(
+                    {"message": "User does not belong to the organization."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            # check if user exists
+            elif not User.objects.filter(id=userId).exists():
+                return Response(
+                    {"message": "User does not exist."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             UserRole.objects.create(
-                user_id=userId, organization_id=organizationId, role_id=role
+                user_id=userId,
+                organization_id=organizationId, 
+                role_id=role.id
             )
             return Response(
                 {"message": "Role assigned successfully!"},
