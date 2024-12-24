@@ -16,13 +16,16 @@ packaging==24.2
 Pygments==2.18.0
 PyJWT==2.10.1
 PySocks==1.7.1
+python-http-client==3.3.7
 pytz==2024.2
 PyYAML==6.0.2
 requests==2.32.3
 requests-toolbelt==1.0.0
 rest-framework-simplejwt==0.0.2
 rich==13.9.4
+sendgrid==6.11.0
 sqlparse==0.5.2
+starkbank-ecdsa==2.2.0
 typing_extensions==4.12.2
 uritemplate==4.1.1
 urllib3==2.2.3
