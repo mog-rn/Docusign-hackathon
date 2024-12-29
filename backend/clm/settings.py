@@ -16,12 +16,21 @@ ALLOWED_HOSTS = []
 
 # Email Configuration
 EMAIL_BACKEND = 'sendgrid_backend.SendgridBackend'
+# EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = 'smtp.sendgrid.net'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'apikey' 
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL')
 
-SENDGRID_SANDBOX_MODE_IN_DEBUG = True
+SENDGRID_SANDBOX_MODE_IN_DEBUG = False
 
 SENDGRID_ECHO_TO_STDOUT = True
+
+# if DEBUG:
+#     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # Frontend URL for invitation links
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
@@ -66,7 +75,7 @@ ROOT_URLCONF = 'clm.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

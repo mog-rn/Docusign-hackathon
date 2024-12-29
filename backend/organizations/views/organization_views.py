@@ -19,10 +19,23 @@ class OrganizationCreateView(generics.GenericAPIView):
             admin_role, _ = Role.objects.get_or_create(
                 name="admin",
                 organization=organization,
+                defaults={
+                    'permissions': {
+                        "can_invite": True,
+                        "can_manage_users": True,
+                        "can_manage_roles": True,
+                        "can_manage_permissions": True,
+                        "can_manage_organization": True,
+                        "is_organization_admin": True
+                    }
+                }
             )
 
             # Add the main admin 
             main_admin = User.objects.get(is_main_admin=True)
+            main_admin.is_organization_admin = True
+            main_admin.save()
+
             UserRole.objects.create(
                 user=main_admin,
                 organization=organization,
@@ -30,6 +43,9 @@ class OrganizationCreateView(generics.GenericAPIView):
             )
 
             if request.user != main_admin:
+                request.user.is_organization_admin = True
+                request.user.save()
+
                 UserRole.objects.create(
                     user=request.user,
                     organization=organization,
@@ -37,7 +53,15 @@ class OrganizationCreateView(generics.GenericAPIView):
                 )
 
             return Response(
-                {"message": "Organization created successfully!", "organization": serializer.data},
+                {
+                    "message": "Organization created successfully!", 
+                    "organization": serializer.data,
+                    "admin_role": {
+                        "id": admin_role.id,
+                        "name": admin_role.name,
+                        "permissions": admin_role.permissions
+                    }
+                },
                 status=status.HTTP_201_CREATED
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

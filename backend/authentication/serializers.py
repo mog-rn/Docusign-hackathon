@@ -1,15 +1,11 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from datetime import datetime, timedelta
-
+from datetime import timedelta
+from django.utils import timezone  # Changed this import
 from authentication.models import Invitation
 from authentication.utils import login_response_constructor
 from core.models import User
-from organizations.models import Domain
-
-from rest_framework import serializers
-from core.models import User
-from organizations.models import Domain, Role, UserRole
+from organizations.models import Domain, Organization, Role, UserRole
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -90,7 +86,35 @@ class InvitationSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'organization', 'role', 'created_at', 'expires_at']
         read_only_fields = ['id', 'created_at', 'expires_at']
 
+    def validate(self, attrs):
+        print("Received data for validation:", attrs)  # Debug print
+        
+        email = attrs.get('email')
+        organization = attrs.get('organization')
+        role = attrs.get('role')
+
+        if not email:
+            raise serializers.ValidationError({"email": "Email is required"})
+        if not organization:
+            raise serializers.ValidationError({"organization": "Organization is required"})
+        if not role:
+            raise serializers.ValidationError({"role": "Role is required"})
+
+        # Validate organization exists
+        try:
+            Organization.objects.get(id=organization.id)
+        except Organization.DoesNotExist:
+            raise serializers.ValidationError({"organization": "Invalid organization ID"})
+
+        # Validate role exists and belongs to organization
+        try:
+            role = Role.objects.get(id=role.id, organization=organization)
+        except Role.DoesNotExist:
+            raise serializers.ValidationError({"role": "Invalid role ID or role does not belong to the organization"})
+
+        return attrs
+
     def create(self, validated_data):
-        validated_data['expires_at'] = datetime.now() + timedelta(days=7) # Expiration time of 7 days
+        validated_data['expires_at'] = timezone.now() + timedelta(days=7)
         validated_data['invited_by'] = self.context['request'].user
         return super().create(validated_data)

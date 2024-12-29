@@ -31,8 +31,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=240)
     last_name = models.CharField(max_length=240)
-    is_organization_admin = models.BooleanField(default=False)
-    is_main_admin = models.BooleanField(default=False)
+    is_organization_admin = models.BooleanField(default=False) # Organization admin
+    is_main_admin = models.BooleanField(default=False) # Django admin
     organization = models.ForeignKey('organizations.Organization', on_delete=models.CASCADE, null=True, blank=True, related_name='members')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -53,23 +53,29 @@ def login_response_constructor(user):
 
 def send_invitation_email(invitation, invitation_url):
     """
-    Send invitaton email to the user.
+    Send invitation email using configured email backend
     """
-    context = {
-        'invitation': invitation,
-        'invitation_url': invitation_url,
-        'organization_name': invitation.organization.name
-    }
-
-    # HTML template for the email
-    html_message = render_to_string('email/invitation.html', context)
-    plain_message = strip_tags(html_message)
-
-    send_mail(
-        subject=f'Invitation to join {invitation.organization.name}',
-        message=plain_message,
-        from_email=settings.DEFAULT_FROM_EMAIL,
-        recipient_list=[invitation.email],
-        html_message=html_message,
-        fail_silently=False,
-    )
+    try:
+        context = {
+            'invitation': invitation,
+            'invitation_url': invitation_url,
+            'organization_name': invitation.organization.name
+        }
+        
+        # Render email templates
+        html_message = render_to_string('email/invitation.html', context)
+        plain_message = strip_tags(html_message)
+        
+        # Send email
+        send_mail(
+            subject=f'Invitation to join {invitation.organization.name}',
+            message=plain_message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[invitation.email],
+            html_message=html_message,
+            fail_silently=False,
+        )
+        return True
+    except Exception as e:
+        print(f"Failed to send invitation email: {str(e)}")
+        raise

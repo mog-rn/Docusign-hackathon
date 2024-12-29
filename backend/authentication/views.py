@@ -8,8 +8,9 @@ from authentication.serializers import InvitationSerializer, RegisterSerializer,
 from authentication.utils import login_response_constructor
 from organizations.permissions import IsOrganizationAdmin
 from rest_framework.permissions import IsAuthenticated
-from django.core.mail import send_mail
-from datetime import timezone
+from django.utils import timezone
+from django.conf import settings
+from authentication.utils import send_invitation_email
 
 class RegisterView(generics.CreateAPIView):
     """
@@ -40,34 +41,63 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
 
 class InviteUserView(generics.CreateAPIView):
-    """
-    Invite a user to join an organization.
-    """
     permission_classes = [IsAuthenticated, IsOrganizationAdmin]
     serializer_class = InvitationSerializer
 
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            invitation = serializer.save()
+        # Add organization ID from URL to request data
+        mutable_data = request.data.copy()
+        mutable_data['organization'] = kwargs.get('organizationId')
+        
+        serializer = self.get_serializer(data=mutable_data)
+        if not serializer.is_valid():
+            print("Serializer errors:", serializer.errors)  # Debug print
+            return Response({
+                "message": "Invalid data provided",
+                "errors": serializer.errors
+            }, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            invitation = serializer.save()
             invitation_url = f"{settings.FRONTEND_URL}/register?token={invitation.id}"
 
             try:
                 send_invitation_email(invitation, invitation_url)
-            except Exception as e:
-                return Response(
-                    {"message": "Failed to send invitation email."},
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
-            
-            return Response({
-                "message": "Invitation sent successfully!",
-                "invitation": serializer.data
+                invitation.email_sent = True
+                invitation.save(update_fields=['email_sent'])
+                
+                return Response({
+                    "message": "Invitation sent successfully!",
+                    "email_sent": True,
+                    "invitation": {
+                        "id": str(invitation.id),
+                        "email": invitation.email,
+                        "organization": str(invitation.organization.id),
+                        "role": str(invitation.role.id),
+                        "expires_at": invitation.expires_at,
+                        "invitation_url": invitation_url
+                    }
                 }, status=status.HTTP_201_CREATED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+                
+            except Exception as e:
+                print(f"Email sending failed: {str(e)}")
+                invitation.email_sent = False
+                invitation.save(update_fields=['email_sent'])
+                
+                return Response({
+                    "message": "Invitation created but email failed to send",
+                    "email_sent": False,
+                    "error": str(e),
+                    "invitation": serializer.data
+                }, status=status.HTTP_201_CREATED)
+                
+        except Exception as e:
+            print(f"Error creating invitation: {str(e)}")
+            return Response({
+                "message": "Failed to create invitation",
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 class AcceptInvitationView(generics.GenericAPIView):
     """
     Accept an invitation to join an organization.
