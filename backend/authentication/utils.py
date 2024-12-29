@@ -59,7 +59,8 @@ def send_invitation_email(invitation, invitation_url):
         context = {
             'invitation': invitation,
             'invitation_url': invitation_url,
-            'organization_name': invitation.organization.name
+            'organization_name': invitation.organization.name,
+            'sender_name': 'CLM System'
         }
         
         # Render email templates
@@ -68,7 +69,7 @@ def send_invitation_email(invitation, invitation_url):
         
         # Send email
         send_mail(
-            subject=f'Invitation to join {invitation.organization.name}',
+            subject=f'CLM System: Invitation to join {invitation.organization.name}',
             message=plain_message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[invitation.email],
