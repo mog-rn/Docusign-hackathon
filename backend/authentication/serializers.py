@@ -79,7 +79,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         user = self.user
         response_data = login_response_constructor(user)
         return response_data
-    
+
+
 class InvitationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Invitation
@@ -87,7 +88,6 @@ class InvitationSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'expires_at']
 
     def validate(self, attrs):
-        print("Received data for validation:", attrs)  # Debug print
         
         email = attrs.get('email')
         organization = attrs.get('organization')
@@ -100,21 +100,59 @@ class InvitationSerializer(serializers.ModelSerializer):
         if not role:
             raise serializers.ValidationError({"role": "Role is required"})
 
-        # Validate organization exists
+        existing_invitation = Invitation.objects.filter(
+            email=email,
+            organization=organization
+        ).first()
+
+        if existing_invitation:
+            if not existing_invitation.accepted and existing_invitation.expires_at > timezone.now():
+                existing_invitation.role = role
+                existing_invitation.expires_at = timezone.now() + timedelta(days=7)
+                existing_invitation.save()
+                
+                raise serializers.ValidationError({
+                    "detail": "An invitation already exists for this user",
+                    "invitation_id": str(existing_invitation.id),
+                    "status": "updated"
+                })
+            elif existing_invitation.accepted:
+                raise serializers.ValidationError({
+                    "detail": "This user has already accepted an invitation to this organization"
+                })
+            else:
+                existing_invitation.delete()
+
+        try:
+            user = User.objects.get(email=email)
+            if UserRole.objects.filter(user=user, organization=organization).exists():
+                raise serializers.ValidationError({
+                    "detail": "User is already a member of this organization"
+                })
+        except User.DoesNotExist:
+            pass
+
         try:
             Organization.objects.get(id=organization.id)
         except Organization.DoesNotExist:
             raise serializers.ValidationError({"organization": "Invalid organization ID"})
 
-        # Validate role exists and belongs to organization
         try:
-            role = Role.objects.get(id=role.id, organization=organization)
+            Role.objects.get(id=role.id, organization=organization)
         except Role.DoesNotExist:
-            raise serializers.ValidationError({"role": "Invalid role ID or role does not belong to the organization"})
+            raise serializers.ValidationError({
+                "role": "Invalid role ID or role does not belong to the organization"
+            })
 
         return attrs
 
     def create(self, validated_data):
+        Invitation.objects.filter(
+            email=validated_data['email'],
+            organization=validated_data['organization'],
+            expires_at__lte=timezone.now()
+        ).delete()
+        
         validated_data['expires_at'] = timezone.now() + timedelta(days=7)
         validated_data['invited_by'] = self.context['request'].user
-        return super().create(validated_data)
+        return super().create(validated_data) 

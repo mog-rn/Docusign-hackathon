@@ -90,9 +90,16 @@ class InviteUserView(generics.CreateAPIView):
                     "error": str(e),
                     "invitation": serializer.data
                 }, status=status.HTTP_201_CREATED)
+            
+        except serializers.ValidationError as e:
+            if isinstance(e.detail, dict) and 'status' in e.detail and e.detail['status'] == 'updated':
+                return Response({
+                    "message": e.detail['detail'],
+                    "invitation_id": e.detail['invitation_id']
+                }, status=status.HTTP_200_OK)
+            raise
                 
         except Exception as e:
-            print(f"Error creating invitation: {str(e)}")
             return Response({
                 "message": "Failed to create invitation",
                 "error": str(e)
@@ -122,14 +129,12 @@ class AcceptInvitationView(generics.GenericAPIView):
         if serializer.is_valid():
             user = serializer.save()
 
-            # Create User role for the invited user
             UserRole.objects.create(
                 user=user,
                 organization=invitation.organization,
                 role=invitation.role
             )
 
-            # Mark the invitation as accepted
             invitation.accepted = True
             invitation.save()
 
