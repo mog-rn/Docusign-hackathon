@@ -9,14 +9,12 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { getOrganizationFromEmail, OrganizationDomain } from "@/utils/organization";
 import { debounce } from "@/utils/debouce";
+import { BASE_URL } from "@/constants";
 
 const formSchema = z.object({
   email: z
     .string()
-    .email("Invalid email format")
-    .refine((email) => email.endsWith("@company.com") || email.endsWith("@business.org"), {
-      message: "Email must be a work email (e.g., ending with @company.com or @business.org)",
-    }),
+    .email("Invalid email format"),
   password: z.string().min(8, {
     message: "Password must be at least 8 characters",
   }),
@@ -78,7 +76,7 @@ export function LoginForm() {
       }
   
       try {
-        const response = await fetch("http://localhost:8000/api/auth/login/", {
+        const response = await fetch(`${BASE_URL}/auth/login/`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
