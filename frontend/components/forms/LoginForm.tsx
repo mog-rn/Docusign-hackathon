@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -10,6 +9,8 @@ import { Button } from "../ui/button";
 import { getOrganizationFromEmail, OrganizationDomain } from "@/utils/organization";
 import { debounce } from "@/utils/debouce";
 import { BASE_URL } from "@/constants";
+import { useRouter } from "next/navigation";
+import { routes } from "@/config/routes";
 
 const formSchema = z.object({
   email: z
@@ -25,6 +26,8 @@ export function LoginForm() {
     const [organization, setOrganization] = useState<OrganizationDomain | null>(null);
     const [emailError, setEmailError] = useState("");
     const [emailValid, setEmailValid] = useState(false);
+
+    const router = useRouter();
   
     const form = useForm({
       resolver: zodResolver(formSchema),
@@ -83,9 +86,14 @@ export function LoginForm() {
         });
   
         if (response.ok) {
-          const result = await response.json();
-          setLoginMessage("Login successful!");
-          console.log("Login Result:", result);
+            const result = await response.json();
+            setLoginMessage("Login successful!");
+
+            console.log("Login successful. Auth token:", result);
+
+            document.cookie = `authToken=${result.accessToken}; path=/;`;
+        
+            router.push('/dashboard');
         } else {
           const errorData = await response.json();
           setLoginMessage(errorData.message || "Login failed");
