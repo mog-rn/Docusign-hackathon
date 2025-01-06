@@ -1,4 +1,4 @@
-import { jwtVerify, SignJWT } from 'jose'
+import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 
 const JWT_SECRET = new TextEncoder().encode(
@@ -16,7 +16,7 @@ export async function verifyAuth() {
   try {
     const { payload } = await jwtVerify(token.value, JWT_SECRET)
     return payload
-  } catch (error) {
-    return null
+  } catch (e) {
+    return e
   }
 }

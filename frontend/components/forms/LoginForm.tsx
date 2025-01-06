@@ -10,7 +10,6 @@ import { getOrganizationFromEmail, OrganizationDomain } from "@/utils/organizati
 import { debounce } from "@/utils/debouce";
 import { BASE_URL } from "@/constants";
 import { useRouter } from "next/navigation";
-import { routes } from "@/config/routes";
 
 const formSchema = z.object({
   email: z
