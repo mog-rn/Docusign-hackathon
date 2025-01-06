@@ -25,6 +25,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/auth/', include('authentication.urls')),
+    path('api/organizations/', include('organizations.urls')),
 
     path('', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]

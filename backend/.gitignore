@@ -5,3 +5,5 @@ ___pycache__/
 env
 trial.py
 todo.md
+sendgrid.env
+.env
