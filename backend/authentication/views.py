@@ -6,7 +6,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from authentication.models import Invitation
 from authentication.serializers import InvitationSerializer, RegisterSerializer, CustomTokenObtainPairSerializer
 from authentication.utils import login_response_constructor
-from organizations.permissions import IsOrganizationAdmin
+from core.permissions import IsOrganizationAdmin
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.conf import settings
