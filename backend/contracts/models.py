@@ -9,6 +9,7 @@ class Contract(models.Model):
         "negotiation": "Negotiation",
         "review": "Review",
         "approval": "Approval",
+        "sign_pending": "Sign Pending",
         "execution": "Execution",
         "monitoring": "Monitoring",
         "renewal": "Renewal",
