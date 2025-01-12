@@ -11,4 +11,4 @@ echo "Running migrations..."
 python manage.py migrate --noinput
 
 echo "Starting Gunicorn..."
-exec gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --threads 2 --timeout 0
+exec gunicorn clm.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --threads 2 --timeout 0
