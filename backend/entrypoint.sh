@@ -2,39 +2,28 @@
 
 set -e  # Exit immediately if a command exits with a non-zero status
 
-# Log DATABASE_URL for debugging
-echo "DATABASE_URL: $DATABASE_URL"
-
-# Parse the DATABASE_URL
+# Check if DATABASE_URL is set
 if [ -z "$DATABASE_URL" ]; then
   echo "Error: DATABASE_URL is not set."
   exit 1
 fi
 
-# Adjust regex to support `postgresql://` and `postgres://`
-regex="^postgres(?:ql)?:\/\/([^:]+):([^@]+)@([^:\/]+)(?::([0-9]+))?\/(.+)$"
-if [[ $DATABASE_URL =~ $regex ]]; then
-  DB_USER="${BASH_REMATCH[1]}"
-  DB_PASSWORD="${BASH_REMATCH[2]}"
-  DB_HOST="${BASH_REMATCH[3]}"
-  DB_PORT="${BASH_REMATCH[4]:-5432}"  # Default port 5432 if not provided
-  DB_NAME="${BASH_REMATCH[5]}"
-else
-  echo "Error: DATABASE_URL format is invalid."
-  exit 1
-fi
-
-echo "Parsed DATABASE_URL:"
-echo "  DB_USER: $DB_USER"
-echo "  DB_PASSWORD: [HIDDEN]"
-echo "  DB_HOST: $DB_HOST"
-echo "  DB_PORT: $DB_PORT"
-echo "  DB_NAME: $DB_NAME"
-
-echo "Waiting for PostgreSQL at $DB_HOST:$DB_PORT..."
+echo "Waiting for PostgreSQL..."
 
 # Wait until PostgreSQL is available
-while ! PGPASSWORD=$DB_PASSWORD psql -h "$DB_HOST" -U "$DB_USER" -d "$DB_NAME" -c '\q' 2>/dev/null; do
+until python -c "
+import psycopg2
+from urllib.parse import urlparse
+url = urlparse('$DATABASE_URL')
+conn = psycopg2.connect(
+    dbname=url.path[1:],
+    user=url.username,
+    password=url.password,
+    host=url.hostname,
+    port=url.port
+)
+conn.close()
+"; do
   echo "PostgreSQL is unavailable - sleeping"
   sleep 1
 done
