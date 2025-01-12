@@ -12,9 +12,9 @@ on:
 
 env:
   PROJECT_ID: songa-386805
-  GAR_LOCATION: us-west1
+  GAR_LOCATION: us-west2
   SERVICE: clm-backend
-  REGION: us-west1
+  REGION: us-west2
 
 defaults:
   run:
