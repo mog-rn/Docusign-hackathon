@@ -1,5 +1,5 @@
 # Use Python 3.12 slim image
-FROM python:3.12-slim
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -46,11 +46,7 @@ RUN chmod +x entrypoint.sh
 ENV DJANGO_SETTINGS_MODULE=clm.settings \
     DEBUG=True \
     SECRET_KEY=dummy-key-for-collectstatic \
-    DB_HOST=dummy \
-    DB_NAME=dummy \
-    DB_USER=dummy \
-    DB_PASSWORD=dummy \
-    DB_PORT=5432
+    DATABASE_URL=postgres://dummy:dummy@dummy:5432/dummy
 
 RUN python manage.py collectstatic --noinput --clear
 
