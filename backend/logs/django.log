@@ -1,3 +1,7 @@
 [INFO] 2025-01-12 10:25:06,903 autoreload Watching for file changes with StatReloader
 [INFO] 2025-01-12 11:03:18,769 autoreload Watching for file changes with StatReloader
 [INFO] 2025-01-12 11:11:37,212 autoreload Watching for file changes with StatReloader
+[INFO] 2025-01-12 11:45:35,209 autoreload Watching for file changes with StatReloader
+[INFO] 2025-01-12 11:47:49,609 autoreload Watching for file changes with StatReloader
+[INFO] 2025-01-12 11:47:57,880 basehttp "GET / HTTP/1.1" 200 935
+[INFO] 2025-01-12 11:47:58,410 basehttp "GET /?format=openapi HTTP/1.1" 200 16898
