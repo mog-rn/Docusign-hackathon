@@ -43,7 +43,7 @@ RUN mkdir -p static staticfiles
 RUN chmod +x entrypoint.sh
 
 # Collect static files
-ENV DJANGO_SETTINGS_MODULE=config.settings \
+ENV DJANGO_SETTINGS_MODULE=clm.settings \
     DEBUG=True \
     SECRET_KEY=dummy-key-for-collectstatic \
     DB_HOST=dummy \
