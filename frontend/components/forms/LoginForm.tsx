@@ -39,7 +39,6 @@ export function LoginForm() {
     const validateEmailDomain = async (email: string) => {
         const parts = email.split("@");
         if (parts.length < 2 || !parts[1].trim()) {
-          // If there is no domain part after '@', do not send the request
           setEmailError("Please enter a valid email address with a domain.");
           setEmailValid(false); 
           setOrganization(null); 
@@ -91,8 +90,8 @@ export function LoginForm() {
             console.log("Login successful. Auth token:", result);
 
             document.cookie = `authToken=${result.accessToken}; path=/;`;
-        
-            router.push('/dashboard');
+            
+            router.push(`/dashboard/${result.user.organizationId}`); 
         } else {
           const errorData = await response.json();
           setLoginMessage(errorData.message || "Login failed");
