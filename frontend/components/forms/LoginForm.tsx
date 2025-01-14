@@ -87,8 +87,6 @@ export function LoginForm() {
             const result = await response.json();
             setLoginMessage("Login successful!");
 
-            console.log("Login successful. Auth token:", result);
-
             document.cookie = `authToken=${result.accessToken}; path=/;`;
             
             router.push(`/dashboard/${result.user.organizationId}`); 
