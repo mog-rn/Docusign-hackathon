@@ -142,3 +142,15 @@ class AcceptInvitationView(generics.GenericAPIView):
             return Response(response_data, status=status.HTTP_201_CREATED)
         
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    """
+    Retrieve, update or delete a user profile.
+    """
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        serializer = RegisterSerializer(user)
+        return Response(serializer.data)
