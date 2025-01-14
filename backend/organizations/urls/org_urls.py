@@ -1,5 +1,5 @@
 from django.urls import path
-from organizations.views.organization_views import OrganizationCreateView, OrganizationDeleteView, OrganizationListView
+from organizations.views.organization_views import OrganizationCreateView, OrganizationDeleteView, OrganizationDetailView, OrganizationListView
 from organizations.views.permissions_views import UpdatePermissionsView
 from organizations.views.role_views import AssignRoleView, AvailableRolesView, UserRolesView
 from organizations.views.user_views import OrganizationUsersView
@@ -8,6 +8,7 @@ urlpatterns = [
     path('', OrganizationListView.as_view(), name='list_organizations'),
     path('create/', OrganizationCreateView.as_view(), name='create_organization'),
     path('<uuid:pk>/delete', OrganizationDeleteView.as_view(),name='delete_organization'),
+    path('<uuid:pk>/', OrganizationDetailView.as_view(), name='get_organization'),
     path('<uuid:organizationId>/roles/', AvailableRolesView.as_view(), name='get_roles'),
     path('<uuid:organizationId>/roles/<int:roleId>/permissions/', UpdatePermissionsView.as_view(), name='update_permissions'),
     path('<uuid:organizationId>/users/', OrganizationUsersView.as_view(), name='get_organization_users'),

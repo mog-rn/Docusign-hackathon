@@ -91,3 +91,20 @@ class OrganizationDeleteView(generics.DestroyAPIView):
             {"message": "Organization deleted successfully!"},
             status=status.HTTP_204_NO_CONTENT
         )
+
+class OrganizationDetailView(generics.RetrieveAPIView):
+    """
+    Retrieve an organization.
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = OrganizationSerializer
+
+    def get_queryset(self):
+        """
+        Return the queryset for the organization, optionally filtering by ID.
+        """
+        organization_id = self.request.query_params.get('organization_id')
+        
+        if organization_id:
+            return Organization.objects.filter(id=organization_id)
+        return Organization.objects.all()
