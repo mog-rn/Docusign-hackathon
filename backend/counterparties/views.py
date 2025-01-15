@@ -8,7 +8,7 @@ from counterparties.models import Counterparty
 from contracts.models import Contract
 from organizations.models import Organization
 from counterparties.serializers import CounterpartySerializer
-from core.permissions import IsOrganizationAdmin, can_access_organization
+from core.permissions import IsOrganizationAdmin
 
 class CounterpartyListCreateView(generics.ListCreateAPIView):
     """
