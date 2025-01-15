@@ -1,12 +1,13 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Image from "next/image";
-import React, { useState } from "react";
+import React from "react";
 import { HiOutlineArrowsExpand } from "react-icons/hi";
+import { useRouter } from "next/navigation";
 
 interface Contract {
+  id: string; // Add a unique ID for each contract
   title: string;
   updated: string;
   status: string;
@@ -17,9 +18,10 @@ interface Contract {
 const contractsData = [
   {
     category: "Employee Contracts",
-    icon: "👔", // Replace with an appropriate employee icon if needed
+    icon: "👔",
     contracts: [
       {
+        id: "1",
         title: "John Doe Employment Contract",
         updated: "5 days ago",
         status: "Active",
@@ -27,26 +29,21 @@ const contractsData = [
         src: "/example.pdf",
       },
       {
+        id: "2",
         title: "Jane Smith NDA",
         updated: "6 days ago",
         status: "Active",
         type: "image",
         src: "/contract-doc.jpg",
       },
-      {
-        title: "Robert Brown Termination Letter",
-        updated: "2 weeks ago",
-        status: "Completed",
-        type: "pdf",
-        src: "/example.pdf",
-      },
     ],
   },
   {
     category: "Healthcare",
-    icon: "💊", // Replace with an appropriate healthcare icon if needed
+    icon: "💊",
     contracts: [
       {
+        id: "3",
         title: "Prohaska, O'Conner and Hills",
         updated: "3 days ago",
         status: "Pending",
@@ -54,26 +51,7 @@ const contractsData = [
         src: "/contract-doc.jpg",
       },
       {
-        title: "Langworth - Ward",
-        updated: "3 days ago",
-        status: "Pending",
-        type: "pdf",
-        src: "/example.pdf",
-      },
-    ],
-  },
-  {
-    category: "Banking",
-    icon: "🏦", // Replace with an appropriate banking icon if needed
-    contracts: [
-      {
-        title: "Prohaska, O'Conner and Hills",
-        updated: "3 days ago",
-        status: "Pending",
-        type: "image",
-        src: "/contract-doc.jpg",
-      },
-      {
+        id: "4",
         title: "Langworth - Ward",
         updated: "3 days ago",
         status: "Pending",
@@ -85,7 +63,7 @@ const contractsData = [
 ];
 
 export default function ContractsDashboard() {
-  const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const router = useRouter();
 
   return (
     <div className="h-screen overflow-y-auto px-6 py-4 bg-gray-50">
@@ -107,10 +85,11 @@ export default function ContractsDashboard() {
             {category.category} ({category.contracts.length})
           </h2>
           <div className="grid grid-flow-col auto-cols-[200px] gap-4 overflow-x-auto">
-            {category.contracts.map((contract, index) => (
+            {category.contracts.map((contract) => (
               <div
-                key={index}
-                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition h-[200px] w-[200px] flex flex-col justify-between"
+                key={contract.id}
+                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition h-[200px] w-[200px] flex flex-col justify-between cursor-pointer"
+                onClick={() => router.push(`/contracts/${contract.id}`)} // Navigate to single contract page
               >
                 <div className="relative mb-2 flex-grow">
                   {contract.type === "image" ? (
@@ -126,41 +105,13 @@ export default function ContractsDashboard() {
                       <p className="text-sm text-gray-600">PDF Preview</p>
                     </div>
                   )}
-
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="absolute top-1 right-1 bg-white text-gray-800 hover:bg-gray-100 p-1 rounded-full shadow"
-                        onClick={() => setSelectedContract(contract)}
-                      >
-                        <HiOutlineArrowsExpand />
-                      </Button>
-                    </DialogTrigger>
-                    {selectedContract === contract && (
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>{contract.title}</DialogTitle>
-                        </DialogHeader>
-                        {contract.type === "image" ? (
-                          <Image
-                            src={contract.src}
-                            alt={contract.title}
-                            width={600}
-                            height={400}
-                            className="rounded-md object-contain"
-                          />
-                        ) : (
-                          <iframe
-                            src={contract.src}
-                            title={contract.title}
-                            className="w-full h-96 rounded-md"
-                          />
-                        )}
-                      </DialogContent>
-                    )}
-                  </Dialog>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="absolute top-1 right-1 bg-white text-gray-800 hover:bg-gray-100 p-1 rounded-full shadow"
+                  >
+                    <HiOutlineArrowsExpand />
+                  </Button>
                 </div>
                 <div>
                   <h3 className="text-sm font-medium text-gray-800 truncate">{contract.title}</h3>
