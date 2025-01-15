@@ -1,5 +1,5 @@
 'use client';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Image from "next/image";
 import { CiSearch } from "react-icons/ci";
@@ -8,6 +8,7 @@ import { MdSpaceDashboard } from "react-icons/md";
 import { HiMiniEllipsisHorizontal } from "react-icons/hi2";
 import { IoIosSettings } from "react-icons/io";
 import { IoMdAnalytics } from "react-icons/io";
+import { BASE_URL } from "@/constants";
 
 const links = [
   { id: 1, name: "Dashboard", icon: MdSpaceDashboard, href: "/dashboard" },
@@ -17,10 +18,50 @@ const links = [
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const [selectedLink, setSelectedLink] = useState<number | null>(1);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
 
   const handleLinkClick = (id: number) => {
     setSelectedLink(id);
   };
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("authToken="))
+          ?.split("=")[1];
+
+        if (!token) {
+          console.error("No auth token found");
+          return;
+        }
+
+        const response = await fetch(`${BASE_URL}/auth/profile/`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUserName(`${data.first_name} ${data.last_name}`);
+          setUserEmail(data.email);
+        } else {
+          console.error("Failed to fetch user profile:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
 
   return (
     <main className="bg-[#121212] h-screen overflow-hidden w-screen flex flex-col md:flex-row p-[12px]">
@@ -110,8 +151,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
           </Avatar>
           <div className="flex items-center flex-1 justify-between">
             <div>
-              <h3 className="text-white text-[14px] font-[600]">John Doe</h3>
-              <p className="text-white/80 text-[12px]">john.doe@gmail.com</p>
+              <h3 className="text-white text-[14px] font-[600]">{userName}</h3>
+              <p className="text-white/80 text-[12px]">{userEmail}</p>
             </div>
 
             {/* ellipsis icon */}
