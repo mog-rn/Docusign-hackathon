@@ -9,21 +9,28 @@ import { HiMiniEllipsisHorizontal } from "react-icons/hi2";
 import { IoIosSettings } from "react-icons/io";
 import { IoMdAnalytics } from "react-icons/io";
 import { BASE_URL } from "@/constants";
+import { useRouter } from "next/navigation";
 
 const links = [
   { id: 1, name: "Dashboard", icon: MdSpaceDashboard, href: "/dashboard" },
-  { id: 2, name: "Analytics", icon: IoMdAnalytics, href: "/analytics" },
+  { id: 2, name: "Contracts", icon: IoMdAnalytics, href: "/contracts" },
   { id: 3, name: "Settings", icon: IoIosSettings, href: "/settings" },
 ];
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const [selectedLink, setSelectedLink] = useState<number | null>(1);
+  const router = useRouter();
   const [userName, setUserName] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
 
   const handleLinkClick = (id: number) => {
     setSelectedLink(id);
+
+    const link = links.find((link) => link.id === id);
+    if (link) {
+      router.push(link.href);
+    }
   };
 
   useEffect(() => {
@@ -176,7 +183,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
       </div>
 
       {/* Content */}
-      <div className="bg-white w-full h-full rounded-[24px] p-[32px]">
+      <div className="bg-white w-full h-full rounded-[24px]  overflow-hidden">
         {children}
       </div>
     </main>

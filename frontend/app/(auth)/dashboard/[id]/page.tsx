@@ -1,19 +1,27 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
+import { BASE_URL } from "@/constants";
+
+interface Organization {
+    id: string;
+    name: string;
+    created_at: string;
+    updated_at: string;
+    domains: string[];
+}
 
 export default function OrgDashboardPage() {
-  const router = useRouter();
-  const params = useParams(); // Use useParams to get dynamic route parameters
-  const [organization, setOrganization] = useState(null);
+  const params = useParams();
+  const [organization, setOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const { id } = params; // Extract the organization ID from params
+    const { id } = params;
 
-    if (!id) return; // If ID is not yet available, return early
+    if (!id) return;
 
     const fetchOrganizationDetails = async () => {
       try {
@@ -28,7 +36,7 @@ export default function OrgDashboardPage() {
           return;
         }
 
-        const response = await fetch(`http://localhost:8000/api/organizations/${id}/`, {
+        const response = await fetch(`${BASE_URL}/organizations/${id}/`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -51,7 +59,7 @@ export default function OrgDashboardPage() {
     };
 
     fetchOrganizationDetails();
-  }, [params]); // Watch params for changes
+  }, [params]);
 
   if (loading) {
     return <div>Loading organization details...</div>;
@@ -63,7 +71,6 @@ export default function OrgDashboardPage() {
 
   return (
     <div>
-      {/* Form header */}
       <h1 className="text-2xl font-semibold text-gray-800">
         Organization Dashboard
       </h1>
