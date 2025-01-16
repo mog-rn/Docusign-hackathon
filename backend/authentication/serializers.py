@@ -9,7 +9,7 @@ from organizations.models import Organization, Role, UserRole
 
 class UserSerializer(serializers.ModelSerializer):
     """
-    Serializer for user registration, including assigning a default role in the organization.
+    Serializer for Users.
     """
     class Meta:
         model = User
@@ -20,6 +20,9 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
 
     def create(self, validated_data):
+        """
+        Creates a new user.
+        """
         user = User.objects.create_user(**validated_data)
         return user
 
@@ -31,7 +34,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         """
-        Generates a JSON web token that includes the user's organization ID in claims.
+        Generates a JWT that includes the user's organization ID in claims.
         """
         token = super().get_token(user)
         organization = user.organization

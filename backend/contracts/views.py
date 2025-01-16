@@ -8,7 +8,6 @@ from django.shortcuts import get_object_or_404
 from contracts.models import Contract
 from contracts.serializers import ContractSerializer
 from contracts.services.s3 import S3
-from organizations.models import Organization
 from core.permissions import IsOrganizationAdmin
 
 
@@ -28,7 +27,6 @@ class ContractListCreateView(generics.ListCreateAPIView):
         """
         List contracts for organization.
         """
-
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -45,7 +43,7 @@ class ContractListCreateView(generics.ListCreateAPIView):
     
         s3_client = S3()
         if not s3_client.check_object_exists(file_path):
-            return Response({'error': 'File path does not exist in s3. Please provide appropriate upload key.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'File path does not exist in s3. First upload the file then create contract.'}, status=status.HTTP_400_BAD_REQUEST)
         
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
