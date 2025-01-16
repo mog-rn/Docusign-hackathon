@@ -1,10 +1,10 @@
 from rest_framework import status, generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from authentication.models import Invitation
-from authentication.serializers import InvitationSerializer, RegisterSerializer, CustomTokenObtainPairSerializer
+from authentication.serializers import InvitationSerializer, UserSerializer
 from authentication.utils import login_response_constructor
 from core.permissions import IsOrganizationAdmin
 from rest_framework.permissions import IsAuthenticated
@@ -16,29 +16,33 @@ class RegisterView(generics.CreateAPIView):
     """
     Register a new user and return the access and refresh tokens.
     """
-    serializer_class = RegisterSerializer
+    serializer_class = UserSerializer
     
-    def post(self, request, *args, **kwargs):
-        serializer = RegisterSerializer(data=request.data)
+    def create(self, request, *args, **kwargs):
+        serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            response_data = login_response_constructor(user)
-            return Response(response_data, status=status.HTTP_201_CREATED)
+
+            # logging in new user and return tokens as success response
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+            token_pair = {
+                "access": access_token,
+                "refresh": refresh_token
+            }
+
+            return Response(token_pair, status=status.HTTP_201_CREATED)
         else:
             errors = serializer.errors
             email_errors = errors.get('email', None)
 
             if email_errors:
-                if "user with this email already exists" in email_errors:
+                if "user with this email already exists." in email_errors:
                     return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
-                elif 'The email provided does not belong to an organization' in email_errors:
-                    return Response(serializer.errors, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
                 
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-class CustomTokenObtainPairView(TokenObtainPairView):
-    serializer_class = CustomTokenObtainPairSerializer
 
 class InviteUserView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, IsOrganizationAdmin]
@@ -109,7 +113,7 @@ class AcceptInvitationView(generics.GenericAPIView):
     """
     Accept an invitation to join an organization.
     """
-    serializer_class = RegisterSerializer
+    serializer_class = UserSerializer
 
     def post(self, request, token):
         try:
@@ -152,5 +156,5 @@ class UserProfileView(APIView):
     """
     def get(self, request, *args, **kwargs):
         user = request.user
-        serializer = RegisterSerializer(user)
+        serializer = UserSerializer(user)
         return Response(serializer.data)

@@ -1,74 +1,17 @@
 from rest_framework import serializers
 
 from core.models import User
-from .models import Organization, Domain, Role
+from .models import Organization, Role
 from django.db import transaction
 
-class DomainSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Domain
-        fields = ['id', 'domain', 'created_at', 'updated_at']
-        read_only_fields = ['id']
-
-    def validate_domain(self, value):
-        # Validate domain format and uniqueness
-        if Domain.objects.filter(domain=value).exists():
-            raise serializers.ValidationError(f"Domain '{value}' already exists")
-        return value
 
 class OrganizationSerializer(serializers.ModelSerializer):
-    domains = serializers.ListField(
-        child=serializers.CharField(max_length=255), 
-        write_only=True
-    )
 
     class Meta:
         model = Organization
-        fields = ['id', 'name', 'created_at', 'domains', 'updated_at']
+        fields = ['id', 'name', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at']
 
-    def validate_name(self, value):
-        # Validate organization name uniqueness
-        if Organization.objects.filter(name=value).exists():
-            raise serializers.ValidationError(f"Organization with name '{value}' already exists")
-        return value
-
-    def validate_domains(self, values):
-        # Check for duplicate domains in the input
-        if len(values) != len(set(values)):
-            raise serializers.ValidationError("Duplicate domains are not allowed")
-            
-        # Check if any domain already exists in the database
-        existing_domains = Domain.objects.filter(domain__in=values)
-        if existing_domains.exists():
-            domains_list = ", ".join([d.domain for d in existing_domains])
-            raise serializers.ValidationError(f"Domain(s) already exist: {domains_list}")
-        
-        return values
-
-    @transaction.atomic
-    def create(self, validated_data):
-        try:
-            domains = validated_data.pop('domains')
-            
-            organization = Organization.objects.create(**validated_data)
-            
-            domain_objects = [
-                Domain(domain=domain, organization=organization)
-                for domain in domains
-            ]
-            Domain.objects.bulk_create(domain_objects)
-            
-            return organization
-            
-        except Exception as e:
-            raise serializers.ValidationError(f"Failed to create organization: {str(e)}")
-
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        # Include domains in the response
-        data['domains'] = list(instance.domains.values_list('domain', flat=True))
-        return data
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -143,6 +86,13 @@ class UpdatePermissionsSerializer(serializers.ModelSerializer):
         model = Role
         fields = ['permissions']
         read_only_fields = ['id', 'name']
+
+
+class OrganizationMemberSerializer(serializers.ModelSerializer):
+    role = serializers.CharField()
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'first_name', 'last_name', 'created_at']
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:

@@ -9,7 +9,7 @@ from contracts.models import Contract
 from contracts.serializers import ContractSerializer
 from contracts.services.s3 import S3
 from organizations.models import Organization
-from core.permissions import IsOrganizationAdmin, can_access_organization
+from core.permissions import IsOrganizationAdmin
 
 
 class ContractListCreateView(generics.ListCreateAPIView):

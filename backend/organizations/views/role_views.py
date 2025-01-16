@@ -3,8 +3,9 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from core.models import User
 from core.permissions import IsMainAdmin, IsOrganizationAdmin
-from organizations.serializer import AssignRoleSerializer, RoleSerializer
-from ..models import Organization, Role, UserRole
+from organizations.serializers import AssignRoleSerializer, RoleSerializer
+from organizations.models import Organization, Role, UserRole
+
 
 class UserRolesView(generics.GenericAPIView):
     """

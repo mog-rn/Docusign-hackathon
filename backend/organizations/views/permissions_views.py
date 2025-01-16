@@ -2,8 +2,9 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from core.permissions import IsMainAdmin
-from organizations.serializer import RoleSerializer
-from ..models import Role
+from organizations.serializers import RoleSerializer
+from organizations.models import Role
+
 
 class UpdatePermissionsView(generics.GenericAPIView):
     """
