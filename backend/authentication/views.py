@@ -149,11 +149,11 @@ class AcceptInvitationView(generics.GenericAPIView):
     
 
 class UserProfileView(APIView):
+    """
+    Get user profile information.
+    """
     permission_classes = [IsAuthenticated]
     
-    """
-    Retrieve, update or delete a user profile.
-    """
     def get(self, request, *args, **kwargs):
         user = request.user
         serializer = UserSerializer(user)

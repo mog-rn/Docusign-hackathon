@@ -20,7 +20,7 @@ class OrganizationListCreateView(generics.ListCreateAPIView):
 
     def create(self, request, *args, **kwargs):
         """
-        Create a new organization and automatically meke user an admin,
+        Create a new organization and automatically make user an admin,
         unless the user is a superuser.
         """
         user = request.user
