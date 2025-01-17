@@ -6,7 +6,7 @@ import Link from "next/link"
 
 export default function LoginPage() {
   return (
-    <div className="">
+    <div className="flex flex-col items-center justify-center w-full gap-[56px]">
       {/* Form header */}
       <h1 className="text-2xl font-semibold text-gray-800">
         Login to your account
