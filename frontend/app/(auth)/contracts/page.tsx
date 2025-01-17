@@ -6,14 +6,14 @@ import React from "react";
 import { HiOutlineArrowsExpand } from "react-icons/hi";
 import { useRouter } from "next/navigation";
 
-interface Contract {
-  id: string; // Add a unique ID for each contract
-  title: string;
-  updated: string;
-  status: string;
-  type: "image" | "pdf";
-  src: string;
-}
+// interface Contract {
+//   id: string; // Add a unique ID for each contract
+//   title: string;
+//   updated: string;
+//   status: string;
+//   type: "image" | "pdf";
+//   src: string;
+// }
 
 const contractsData = [
   {

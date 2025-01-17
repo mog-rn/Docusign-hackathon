@@ -58,13 +58,13 @@ export function RegisterForm() {
         const result = await response.json();
 
         // Store the tokens in cookies
-        document.cookie = `authToken=${result.accessToken}; path=/;`;
-        document.cookie = `refreshToken=${result.refreshToken}; path=/;`;
+        document.cookie = `authToken=${result.access}; path=/;`;
+        document.cookie = `refreshToken=${result.refresh}; path=/;`;
 
         setRegisterMessage("Registration successful!");
 
-        // Redirect to the dashboard
-        router.push(`/dashboard/${result.user.organizationId}`);
+        // Redirect to the login page or dashboard
+        router.push("/login"); // Redirect to the login page
       } else {
         const errorData = await response.json();
         setRegisterMessage(errorData.message || "Registration failed");
