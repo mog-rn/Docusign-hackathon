@@ -55,8 +55,16 @@ export function RegisterForm() {
       });
 
       if (response.ok) {
+        const result = await response.json();
+
+        // Store the tokens in cookies
+        document.cookie = `authToken=${result.accessToken}; path=/;`;
+        document.cookie = `refreshToken=${result.refreshToken}; path=/;`;
+
         setRegisterMessage("Registration successful!");
-        router.push("/login"); // Redirect to login page after successful registration
+
+        // Redirect to the dashboard
+        router.push(`/dashboard/${result.user.organizationId}`);
       } else {
         const errorData = await response.json();
         setRegisterMessage(errorData.message || "Registration failed");
@@ -75,32 +83,32 @@ export function RegisterForm() {
       <div className="grid grid-cols-2 gap-4">
         {/* First Name */}
         <div>
-            <label htmlFor="firstName">First Name</label>
-            <input
+          <label htmlFor="firstName">First Name</label>
+          <input
             {...form.register("firstName")}
             placeholder="John"
             className="border w-full p-2"
-            />
-            {form.formState.errors.firstName && (
+          />
+          {form.formState.errors.firstName && (
             <p className="text-red-500 text-sm">
-                {form.formState.errors.firstName.message}
+              {form.formState.errors.firstName.message}
             </p>
-            )}
+          )}
         </div>
 
         {/* Last Name */}
         <div>
-            <label htmlFor="lastName">Last Name</label>
-            <input
+          <label htmlFor="lastName">Last Name</label>
+          <input
             {...form.register("lastName")}
             placeholder="Doe"
             className="border w-full p-2"
-            />
-            {form.formState.errors.lastName && (
+          />
+          {form.formState.errors.lastName && (
             <p className="text-red-500 text-sm">
-                {form.formState.errors.lastName.message}
+              {form.formState.errors.lastName.message}
             </p>
-            )}
+          )}
         </div>
       </div>
 

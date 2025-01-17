@@ -1,4 +1,4 @@
-'use client'
+'use client';
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 
@@ -11,6 +11,22 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     { id: 2, label: "Setup your organization", route: "/setup-organization" },
     { id: 3, label: "Set up your profile", route: "/setup-profile" },
   ];
+
+  // Define page-specific messages
+  const pageMessages = {
+    "/register": {
+      title: "Get started with us.",
+      description: "Complete these easy steps to create your account.",
+    },
+    "/login": {
+      title: "Welcome back!",
+      description: "Log in to continue to your dashboard.",
+    },
+  };
+
+  // Safely access pageMessages
+  const { title, description } =
+    pageMessages[pathname as keyof typeof pageMessages] || pageMessages["/register"];
 
   return (
     <main className="h-screen overflow-hidden w-screen flex">
@@ -30,38 +46,38 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
           {/* Header */}
           <div className="z-10">
             <h1 className="text-2xl font-semibold text-white z-10">
-              Get started with us.
+              {title}
             </h1>
-            <p className="text-white z-10">
-              Complete these easy steps to create your account.
-            </p>
+            <p className="text-white z-10">{description}</p>
           </div>
 
           {/* Steps Section */}
-          <div className="h-[144px] z-10 flex items-center gap-[8px]">
-            {steps.map((step) => {
-              const isActive = pathname === step.route; // Check if the step is active
-              return (
-                <div
-                  key={step.id}
-                  className={`w-[164px] h-full p-[24px] rounded-[1rem] flex flex-col justify-between ${
-                    isActive ? "bg-white" : "bg-white/10"
-                  }`}
-                >
-                  <p
-                    className={`flex items-center h-[24px] w-[24px] text-[14px] rounded-full justify-center ${
-                      isActive ? "bg-black text-white" : "bg-white/10 text-white"
+          {pathname !== "/login" && ( // Hide steps on login page
+            <div className="h-[144px] z-10 flex items-center gap-[8px]">
+              {steps.map((step) => {
+                const isActive = pathname === step.route; // Check if the step is active
+                return (
+                  <div
+                    key={step.id}
+                    className={`w-[164px] h-full p-[24px] rounded-[1rem] flex flex-col justify-between ${
+                      isActive ? "bg-white" : "bg-white/10"
                     }`}
                   >
-                    {step.id}
-                  </p>
-                  <p className={`${isActive ? "text-black" : "text-white"}`}>
-                    {step.label}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+                    <p
+                      className={`flex items-center h-[24px] w-[24px] text-[14px] rounded-full justify-center ${
+                        isActive ? "bg-black text-white" : "bg-white/10 text-white"
+                      }`}
+                    >
+                      {step.id}
+                    </p>
+                    <p className={`${isActive ? "text-black" : "text-white"}`}>
+                      {step.label}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
