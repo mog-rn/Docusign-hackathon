@@ -1,6 +1,7 @@
 'use client'
 
 import { LoginForm } from "@/components/forms/LoginForm"
+import Link from "next/link"
 
 
 export default function LoginPage() {
@@ -11,6 +12,12 @@ export default function LoginPage() {
         Login to your account
       </h1>
       <LoginForm />
+      <div>
+        Don&apos;t have an account?{" "}
+        <Link href="/register" className="underline underline-offset-1">
+          Register
+        </Link> 
+      </div>
     </div>
   )
 }
