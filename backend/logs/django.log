@@ -1,3 +1,82 @@
 [INFO] 2025-01-12 10:25:06,903 autoreload Watching for file changes with StatReloader
 [INFO] 2025-01-12 11:03:18,769 autoreload Watching for file changes with StatReloader
 [INFO] 2025-01-12 11:11:37,212 autoreload Watching for file changes with StatReloader
+[INFO] 2025-01-17 00:20:17,652 autoreload Watching for file changes with StatReloader
+[INFO] 2025-01-17 00:21:46,572 autoreload Watching for file changes with StatReloader
+[INFO] 2025-01-17 00:24:36,071 basehttp "GET / HTTP/1.1" 200 935
+[INFO] 2025-01-17 00:24:36,119 basehttp "GET /static/drf-yasg/redoc-init.js HTTP/1.1" 200 2566
+[INFO] 2025-01-17 00:24:36,260 basehttp "GET /?format=openapi HTTP/1.1" 200 18334
+[INFO] 2025-01-17 01:36:57,108 basehttp "GET / HTTP/1.1" 200 935
+[INFO] 2025-01-17 01:36:57,299 basehttp "GET /?format=openapi HTTP/1.1" 200 18334
+[INFO] 2025-01-17 01:53:17,365 basehttp "OPTIONS /api/auth/register/ HTTP/1.1" 200 0
+[INFO] 2025-01-17 01:53:18,148 basehttp "POST /api/auth/register/ HTTP/1.1" 201 483
+[INFO] 2025-01-17 01:54:38,785 basehttp "POST /api/auth/register/ HTTP/1.1" 201 483
+[INFO] 2025-01-17 01:59:51,436 basehttp "POST /api/auth/register/ HTTP/1.1" 201 483
+[INFO] 2025-01-17 02:04:42,189 basehttp "OPTIONS /api/auth/register/ HTTP/1.1" 200 0
+[WARNING] 2025-01-17 02:04:42,689 log Conflict: /api/auth/register/
+[WARNING] 2025-01-17 02:04:42,690 basehttp "POST /api/auth/register/ HTTP/1.1" 409 50
+[INFO] 2025-01-17 02:04:54,059 basehttp "POST /api/auth/register/ HTTP/1.1" 201 483
+[INFO] 2025-01-17 02:09:21,082 basehttp "POST /api/auth/register/ HTTP/1.1" 201 483
+[INFO] 2025-01-17 02:09:30,342 basehttp "OPTIONS /api/auth/profile/ HTTP/1.1" 200 0
+[INFO] 2025-01-17 02:09:30,343 basehttp "OPTIONS /api/auth/profile/ HTTP/1.1" 200 0
+[INFO] 2025-01-17 02:09:30,414 basehttp "GET /api/auth/profile/ HTTP/1.1" 200 159
+[INFO] 2025-01-17 02:09:30,422 basehttp "GET /api/auth/profile/ HTTP/1.1" 200 159
+[INFO] 2025-01-17 02:10:05,359 basehttp "GET /api/auth/profile/ HTTP/1.1" 200 159
+[INFO] 2025-01-17 02:12:05,216 basehttp "OPTIONS /api/organizations/f5bd6848-fcc4-4516-ba2f-d356854e32b7/ HTTP/1.1" 200 0
+[INFO] 2025-01-17 02:12:05,264 basehttp "GET /api/auth/profile/ HTTP/1.1" 200 159
+[WARNING] 2025-01-17 02:12:05,278 log Forbidden: /api/organizations/f5bd6848-fcc4-4516-ba2f-d356854e32b7/
+[WARNING] 2025-01-17 02:12:05,278 basehttp "GET /api/organizations/f5bd6848-fcc4-4516-ba2f-d356854e32b7/ HTTP/1.1" 403 63
+[INFO] 2025-01-17 05:12:38,969 basehttp "GET /admin/ HTTP/1.1" 302 0
+[INFO] 2025-01-17 05:12:39,040 basehttp "GET /admin/login/?next=/admin/ HTTP/1.1" 200 4157
+[INFO] 2025-01-17 05:12:39,092 basehttp "GET /static/admin/js/theme.js HTTP/1.1" 200 1653
+[INFO] 2025-01-17 05:12:39,092 basehttp "GET /static/admin/css/dark_mode.css HTTP/1.1" 200 2804
+[INFO] 2025-01-17 05:12:39,093 basehttp "GET /static/admin/js/nav_sidebar.js HTTP/1.1" 200 3063
+[INFO] 2025-01-17 05:12:39,093 basehttp "GET /static/admin/css/nav_sidebar.css HTTP/1.1" 200 2810
+[INFO] 2025-01-17 05:12:39,093 basehttp "GET /static/admin/css/login.css HTTP/1.1" 200 951
+[INFO] 2025-01-17 05:12:39,094 basehttp "GET /static/admin/css/base.css HTTP/1.1" 200 22092
+[INFO] 2025-01-17 05:12:39,096 basehttp "GET /static/admin/css/responsive.css HTTP/1.1" 200 17972
+[INFO] 2025-01-17 05:12:46,236 basehttp "POST /admin/login/?next=/admin/ HTTP/1.1" 302 0
+[INFO] 2025-01-17 05:12:46,280 basehttp "GET /admin/ HTTP/1.1" 200 12984
+[INFO] 2025-01-17 05:12:46,296 basehttp "GET /static/admin/css/dashboard.css HTTP/1.1" 200 441
+[INFO] 2025-01-17 05:12:46,309 basehttp "GET /static/admin/img/icon-addlink.svg HTTP/1.1" 200 331
+[INFO] 2025-01-17 05:12:46,310 basehttp "GET /static/admin/img/icon-changelink.svg HTTP/1.1" 200 380
+[INFO] 2025-01-17 05:12:55,200 basehttp "GET /admin/core/user/ HTTP/1.1" 200 15866
+[INFO] 2025-01-17 05:12:55,218 basehttp "GET /static/admin/css/changelists.css HTTP/1.1" 200 6878
+[INFO] 2025-01-17 05:12:55,218 basehttp "GET /static/admin/js/core.js HTTP/1.1" 200 6208
+[INFO] 2025-01-17 05:12:55,219 basehttp "GET /static/admin/js/jquery.init.js HTTP/1.1" 200 347
+[INFO] 2025-01-17 05:12:55,219 basehttp "GET /static/admin/js/admin/RelatedObjectLookups.js HTTP/1.1" 200 9097
+[INFO] 2025-01-17 05:12:55,221 basehttp "GET /static/admin/js/vendor/jquery/jquery.js HTTP/1.1" 200 285314
+[INFO] 2025-01-17 05:12:55,227 basehttp "GET /static/admin/js/actions.js HTTP/1.1" 200 8076
+[INFO] 2025-01-17 05:12:55,228 basehttp "GET /static/admin/js/prepopulate.js HTTP/1.1" 200 1531
+[INFO] 2025-01-17 05:12:55,228 basehttp "GET /static/admin/js/filters.js HTTP/1.1" 200 978
+[INFO] 2025-01-17 05:12:55,228 basehttp "GET /static/admin/js/urlify.js HTTP/1.1" 200 7887
+[INFO] 2025-01-17 05:12:55,231 basehttp "GET /static/admin/js/vendor/xregexp/xregexp.js HTTP/1.1" 200 325171
+[INFO] 2025-01-17 05:12:55,242 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[INFO] 2025-01-17 05:12:55,285 basehttp "GET /static/admin/img/tooltag-add.svg HTTP/1.1" 200 331
+[INFO] 2025-01-17 05:13:12,364 basehttp "GET /admin/core/user/ HTTP/1.1" 200 15866
+[INFO] 2025-01-17 05:13:12,393 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[INFO] 2025-01-17 05:13:14,758 basehttp "GET /admin/core/user/?o=1 HTTP/1.1" 200 16306
+[INFO] 2025-01-17 05:13:14,775 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[INFO] 2025-01-17 05:13:14,791 basehttp "GET /static/admin/img/sorting-icons.svg HTTP/1.1" 200 1097
+[INFO] 2025-01-17 05:13:16,677 basehttp "GET /admin/core/user/7/change/?_changelist_filters=o%3D1 HTTP/1.1" 200 27670
+[INFO] 2025-01-17 05:13:16,692 basehttp "GET /static/admin/css/forms.css HTTP/1.1" 200 8794
+[INFO] 2025-01-17 05:13:16,702 basehttp "GET /static/admin/js/change_form.js HTTP/1.1" 200 606
+[INFO] 2025-01-17 05:13:16,703 basehttp "GET /static/admin/js/calendar.js HTTP/1.1" 200 9141
+[INFO] 2025-01-17 05:13:16,705 basehttp "GET /static/admin/css/widgets.css HTTP/1.1" 200 11564
+[INFO] 2025-01-17 05:13:16,705 basehttp "GET /admin/jsi18n/ HTTP/1.1" 200 3342
+[INFO] 2025-01-17 05:13:16,706 basehttp "GET /static/admin/js/prepopulate_init.js HTTP/1.1" 200 586
+[INFO] 2025-01-17 05:13:16,706 basehttp "GET /static/admin/js/admin/DateTimeShortcuts.js HTTP/1.1" 200 19319
+[INFO] 2025-01-17 05:13:16,707 basehttp "GET /static/admin/img/icon-viewlink.svg HTTP/1.1" 200 581
+[INFO] 2025-01-17 05:13:16,734 basehttp "GET /static/admin/img/icon-calendar.svg HTTP/1.1" 200 1086
+[INFO] 2025-01-17 05:13:16,734 basehttp "GET /static/admin/img/icon-clock.svg HTTP/1.1" 200 677
+[INFO] 2025-01-17 05:22:22,004 autoreload Watching for file changes with StatReloader
+[INFO] 2025-01-17 05:22:29,249 basehttp "OPTIONS /api/auth/login/ HTTP/1.1" 200 0
+[INFO] 2025-01-17 05:22:29,631 basehttp "POST /api/auth/login/ HTTP/1.1" 200 635
+[INFO] 2025-01-17 05:22:34,660 basehttp "POST /api/auth/login/ HTTP/1.1" 200 635
+[INFO] 2025-01-17 05:22:54,728 basehttp "OPTIONS /api/auth/profile/ HTTP/1.1" 200 0
+[WARNING] 2025-01-17 05:22:54,735 log Unauthorized: /api/auth/profile/
+[WARNING] 2025-01-17 05:22:54,736 basehttp "GET /api/auth/profile/ HTTP/1.1" 401 183
+[WARNING] 2025-01-17 05:24:48,409 log Unauthorized: /api/auth/profile/
+[WARNING] 2025-01-17 05:24:48,410 basehttp "GET /api/auth/profile/ HTTP/1.1" 401 183
+[INFO] 2025-01-17 05:27:16,642 basehttp "POST /api/auth/login/ HTTP/1.1" 200 635
+[INFO] 2025-01-18 12:14:28,747 autoreload Watching for file changes with StatReloader
