@@ -9,7 +9,6 @@ interface Organization {
     name: string;
     created_at: string;
     updated_at: string;
-    domains: string[];
 }
 
 export default function OrgDashboardPage() {
@@ -78,22 +77,6 @@ export default function OrgDashboardPage() {
       {organization && (
         <div className="mt-4">
           <h2 className="text-xl font-semibold">{organization.name}</h2>
-          <p className="text-gray-600">
-            Created At: {new Date(organization.created_at).toLocaleDateString()}
-          </p>
-          <p className="text-gray-600">
-            Updated At: {new Date(organization.updated_at).toLocaleDateString()}
-          </p>
-          <div className="mt-2">
-            <h3 className="text-lg font-medium">Domains:</h3>
-            <ul className="list-disc list-inside">
-              {organization.domains.map((domain: string) => (
-                <li key={domain} className="text-gray-700">
-                  {domain}
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
       )}
     </div>

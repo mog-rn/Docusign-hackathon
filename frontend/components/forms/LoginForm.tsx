@@ -8,6 +8,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { BASE_URL } from "@/constants";
 import { useRouter } from "next/navigation";
+import { useOrganizations } from "@/hooks/useOrganization";
 
 const formSchema = z.object({
   email: z
@@ -20,6 +21,7 @@ const formSchema = z.object({
 
 export function LoginForm() {
     const [loginMessage, setLoginMessage] = useState("");
+    const organizations = useOrganizations();
 
     const router = useRouter();
   
@@ -43,9 +45,10 @@ export function LoginForm() {
             const result = await response.json();
             setLoginMessage("Login successful!");
 
-            document.cookie = `authToken=${result.accessToken}; path=/;`;
+            document.cookie = `authToken=${result.access}; path=/;`;
+            document.cookie = `refreshToken=${result.refresh}; path=/;`;
             
-            router.push(`/dashboard/${result.user.organizationId}`); 
+            router.push(`/dashboard/${organizations[0].id}`); 
         } else {
           const errorData = await response.json();
           setLoginMessage(errorData.message || "Login failed");

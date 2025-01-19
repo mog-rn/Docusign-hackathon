@@ -8,8 +8,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
   // Define the steps with their associated route paths
   const steps = [
     { id: 1, label: "Sign up your account", route: "/register" },
-    { id: 2, label: "Setup your organization", route: "/setup-organization" },
-    { id: 3, label: "Set up your profile", route: "/setup-profile" },
+    { id: 2, label: "Setup your organization", route: "/register/organization" },
+    { id: 3, label: "Set up your profile", route: "/register/profile" },
   ];
 
   // Define page-specific messages
