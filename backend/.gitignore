@@ -8,5 +8,6 @@ todo.md
 sendgrid.env
 .env
 esignature
-
+123.pdf
+private.key
 /logs/
