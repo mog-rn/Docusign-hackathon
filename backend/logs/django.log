@@ -223,3 +223,18 @@
 [INFO] 2025-01-20 04:19:31,396 basehttp "GET /api/auth/profile/ HTTP/1.1" 200 170
 [INFO] 2025-01-20 04:19:31,513 basehttp "GET /api/contracts/ HTTP/1.1" 200 2
 [INFO] 2025-01-20 16:47:22,678 autoreload Watching for file changes with StatReloader
+[INFO] 2025-01-20 17:02:32,981 basehttp "OPTIONS /api/auth/login/ HTTP/1.1" 200 0
+[INFO] 2025-01-20 17:02:33,544 basehttp "POST /api/auth/login/ HTTP/1.1" 200 638
+[INFO] 2025-01-20 17:02:39,020 basehttp "POST /api/auth/login/ HTTP/1.1" 200 638
+[INFO] 2025-01-20 17:02:41,993 basehttp "OPTIONS /api/organizations/fdb4adcb-ee23-403d-818f-a81e7041fa3b/ HTTP/1.1" 200 0
+[INFO] 2025-01-20 17:02:41,994 basehttp "OPTIONS /api/auth/profile/ HTTP/1.1" 200 0
+[INFO] 2025-01-20 17:02:42,007 basehttp "OPTIONS /api/organizations/fdb4adcb-ee23-403d-818f-a81e7041fa3b/ HTTP/1.1" 200 0
+[INFO] 2025-01-20 17:02:42,009 basehttp "OPTIONS /api/auth/profile/ HTTP/1.1" 200 0
+[INFO] 2025-01-20 17:02:42,288 basehttp "GET /api/auth/profile/ HTTP/1.1" 200 170
+[INFO] 2025-01-20 17:02:42,298 basehttp "GET /api/auth/profile/ HTTP/1.1" 200 170
+[INFO] 2025-01-20 17:02:42,340 basehttp "GET /api/organizations/fdb4adcb-ee23-403d-818f-a81e7041fa3b/ HTTP/1.1" 200 151
+[INFO] 2025-01-20 17:02:42,341 basehttp "GET /api/organizations/fdb4adcb-ee23-403d-818f-a81e7041fa3b/ HTTP/1.1" 200 151
+[INFO] 2025-01-20 17:03:08,205 basehttp "OPTIONS /api/contracts/ HTTP/1.1" 200 0
+[INFO] 2025-01-20 17:03:08,206 basehttp "OPTIONS /api/contracts/ HTTP/1.1" 200 0
+[INFO] 2025-01-20 17:03:08,285 basehttp "GET /api/contracts/ HTTP/1.1" 200 2
+[INFO] 2025-01-20 17:03:08,286 basehttp "GET /api/contracts/ HTTP/1.1" 200 2
