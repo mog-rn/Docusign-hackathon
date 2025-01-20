@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { HiOutlineArrowsExpand } from "react-icons/hi";
@@ -13,6 +14,7 @@ export default function ContractsDashboard() {
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     const fetchContracts = async () => {
@@ -43,6 +45,102 @@ export default function ContractsDashboard() {
     fetchContracts();
   }, []);
 
+  const generateS3Policy = () => {
+    const expiration = new Date();
+    expiration.setHours(expiration.getHours() + 1); // Set expiration 1 hour from now
+
+    const policy = {
+      expiration: expiration.toISOString(),
+      conditions: [
+        { bucket: "docusign-hackathon-bucket" },
+        ["starts-with", "$key", "contracts/"],
+        { "x-amz-algorithm": "AWS4-HMAC-SHA256" },
+        { "x-amz-credential": "AKIASVQKH6GPAZZVYY7K/20250112/eu-north-1/s3/aws4_request" },
+        { "x-amz-date": new Date().toISOString().replace(/[:-]|\.\d{3}/g, "") + "Z" },
+      ],
+    };
+
+    return Buffer.from(JSON.stringify(policy)).toString("base64");
+  };
+
+  const handleCreateContract = async (useTemplate: boolean) => {
+    setDialogOpen(false);
+
+    try {
+      let filePath = "";
+
+      if (useTemplate) {
+        // Step 1: Fetch the template content
+        const templateContent = await fetchTemplateFromOpenAI();
+
+        // Step 2: Upload the template to S3
+        const formData = new FormData();
+        formData.append("key", `contracts/${Date.now()}_template.pdf`);
+        formData.append("x-amz-algorithm", "AWS4-HMAC-SHA256");
+        formData.append(
+          "x-amz-credential",
+          "AKIASVQKH6GPAZZVYY7K/20250112/eu-north-1/s3/aws4_request"
+        );
+        formData.append("x-amz-date", new Date().toISOString().replace(/[:-]|\.\d{3}/g, "") + "Z");
+        formData.append("policy", generateS3Policy());
+        formData.append(
+          "x-amz-signature",
+          "f45cce42bbc210de6375bc1da80dda78c0c14fbb95073da7aac7f50d3bfe088c"
+        );
+        formData.append("file", new Blob([templateContent], { type: "application/pdf" }));
+
+        const s3Response = await fetch("https://docusign-hackathon-bucket.s3.amazonaws.com/", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!s3Response.ok) {
+          throw new Error("Failed to upload template to S3");
+        }
+
+        filePath = `https://docusign-hackathon-bucket.s3.amazonaws.com/contracts/${Date.now()}_template.pdf`;
+      }
+
+      // Step 3: Create the contract with the file path
+      const response = await fetch(`${BASE_URL}/contracts/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("authToken="))
+            ?.split("=")[1]}`,
+        },
+        body: JSON.stringify({
+          title: useTemplate ? "Template Contract" : "New Contract",
+          file_path: useTemplate ? filePath : "",
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create contract");
+      }
+
+      const newContract: Contract = await response.json();
+      router.push(`/contracts/${newContract.id}`);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to create contract. Please try again later.");
+    }
+  };
+
+  const fetchTemplateFromOpenAI = async (): Promise<string> => {
+    try {
+      const response = await fetch("/api/generate-template", { method: "POST" });
+      if (!response.ok) throw new Error("Failed to fetch template");
+      const data = await response.json();
+      return data.template || "Default Template Content";
+    } catch (error) {
+      console.error("Error fetching template:", error);
+      return "Default Template Content";
+    }
+  };
+
   if (loading) {
     return <div className="h-screen flex items-center justify-center">Loading contracts...</div>;
   }
@@ -64,7 +162,7 @@ export default function ContractsDashboard() {
         </div>
 
         <div>
-          <Button>Create New Contract</Button>
+          <Button onClick={() => setDialogOpen(true)}>Create New Contract</Button>
         </div>
       </header>
 
@@ -75,7 +173,7 @@ export default function ContractsDashboard() {
             <div
               key={contract.id}
               className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition h-[200px] w-[200px] flex flex-col justify-between cursor-pointer"
-              onClick={() => router.push(`/contracts/${contract.id}`)} // Navigate to single contract page
+              onClick={() => router.push(`/contracts/${contract.id}`)}
             >
               <div className="relative mb-2 flex-grow">
                 {contract.file_path.endsWith(".jpg") || contract.file_path.endsWith(".png") ? (
@@ -120,6 +218,21 @@ export default function ContractsDashboard() {
           ))}
         </div>
       </section>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Choose Contract Type</DialogTitle>
+          </DialogHeader>
+          <p>Do you want to start from scratch or use a template?</p>
+          <DialogFooter>
+            <Button onClick={() => handleCreateContract(false)}>Start from Scratch</Button>
+            <Button onClick={() => handleCreateContract(true)} variant="outline">
+              Use Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
