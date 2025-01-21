@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 let cachedTemplate: string | null = null;
 
 export async function POST() {
-  const apiKey = process.env.OPENAI_API_KEY; // Set your OpenAI API key in the .env file
+  const apiKey = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ message: "Missing OpenAI API key" }, { status: 500 });
   }
