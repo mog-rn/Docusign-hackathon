@@ -1,10 +1,28 @@
 # Use Python 3.12 slim image
 FROM python:3.11-slim
 
-# Set environment variables
+# Declare build arguments for AWS credentials
+ARG AWS_ACCESS_KEY_ID
+ARG AWS_SECRET_ACCESS_KEY
+ARG AWS_STORAGE_BUCKET_NAME
+ARG AWS_S3_REGION_NAME
+ARG AWS_PRESIGNED_EXPIRY
+
+# Set environment variables using the build arguments
+ENV AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+ENV AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+ENV AWS_STORAGE_BUCKET_NAME=$AWS_STORAGE_BUCKET_NAME
+ENV AWS_S3_REGION_NAME=$AWS_S3_REGION_NAME
+ENV AWS_PRESIGNED_EXPIRY=$AWS_PRESIGNED_EXPIRY
+
+# Set other environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=8080
+    PORT=8080 \
+    DJANGO_SETTINGS_MODULE=clm.settings \
+    DEBUG=True \
+    SECRET_KEY=dummy-key-for-collectstatic \
+    DATABASE_URL=postgres://dummy:dummy@dummy:5432/dummy
 
 # Set working directory
 WORKDIR /app
@@ -43,11 +61,6 @@ RUN mkdir -p static staticfiles
 RUN chmod +x entrypoint.sh
 
 # Collect static files
-ENV DJANGO_SETTINGS_MODULE=clm.settings \
-    DEBUG=True \
-    SECRET_KEY=dummy-key-for-collectstatic \
-    DATABASE_URL=postgres://dummy:dummy@dummy:5432/dummy
-
 RUN python manage.py collectstatic --noinput --clear
 
 # Expose the port that Cloud Run expects

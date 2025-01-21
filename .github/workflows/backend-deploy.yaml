@@ -68,9 +68,16 @@ jobs:
               
       - name: Build and Push Container
         run: |
-          docker build -t "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE:$GITHUB_SHA" -f Dockerfile .
+          docker build \
+            --build-arg AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            --build-arg AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            --build-arg AWS_STORAGE_BUCKET_NAME="${{ secrets.AWS_STORAGE_BUCKET_NAME }}" \
+            --build-arg AWS_S3_REGION_NAME="${{ secrets.AWS_S3_REGION_NAME }}" \
+            --build-arg AWS_PRESIGNED_EXPIRY="${{ secrets.AWS_PRESIGNED_EXPIRY }}" \
+            -t "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE:$GITHUB_SHA" \
+            -f Dockerfile .
           docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE:$GITHUB_SHA"
-      
+ 
       - name: Debug Static Files
         run: |
           echo "Current directory contents:"
