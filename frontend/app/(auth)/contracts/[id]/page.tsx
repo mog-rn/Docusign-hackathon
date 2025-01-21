@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -11,187 +12,337 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-type ContractSection = {
-  id: number;
-  title: string;
-  content: string;
+type Counterparty = {
+  id?: string;
+  party_name: string;
+  party_type: string;
+  email: string;
+  isPrimary: boolean;
+  contract: string;
 };
 
 type Contract = {
   id: string;
   title: string;
-  clientName: string;
-  isPublic: boolean;
-  sections: ContractSection[];
+  description?: string;
+  contract_type: string;
+  stage: string;
+  effective_from?: string;
+  expires_on?: string;
+  is_renewable: boolean;
+  renewal_count: number;
+  renewed_on?: string;
+  terminated_at?: string;
+  terminated_reason?: string;
+  file_path: string;
+  counterparties: Counterparty[];
+  content: string; // Text content for editing in the UI
 };
 
 export default function ContractBuilderPage() {
+  const params = useParams();
+  const id = Array.isArray(params?.id) ? params.id[0] : params.id;
   const [contract, setContract] = useState<Contract | null>(null);
-  const params = { id: "1" };
+  const [newCounterparty, setNewCounterparty] = useState<Counterparty>({
+    party_name: "",
+    party_type: "",
+    email: "",
+    isPrimary: false,
+    contract: id || "",
+  });
+  const [caretPosition, setCaretPosition] = useState<number | null>(null);
+
+  const fetchContract = async () => {
+    if (!id) {
+      console.error("No contract ID provided");
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:8000/api/contracts/${id}/`, {
+        headers: {
+          Authorization: `Bearer ${document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("authToken="))
+            ?.split("=")[1]}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch contract details");
+      }
+
+      const data = await response.json();
+
+      // Fetch presigned download URL for the S3 file
+      const downloadResponse = await fetch(
+        `http://localhost:8000/api/contracts/presigned-download-url/?file_path=${data.file_path}`,
+        {
+          headers: {
+            Authorization: `Bearer ${document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("authToken="))
+              ?.split("=")[1]}`,
+          },
+        }
+      );
+
+      if (!downloadResponse.ok) {
+        throw new Error("Failed to fetch presigned download URL");
+      }
+
+      const downloadData = await downloadResponse.json();
+
+      // Fetch the actual content from S3
+      const s3Response = await fetch(downloadData.url);
+      if (!s3Response.ok) {
+        throw new Error("Failed to download file content");
+      }
+
+      const content = await s3Response.text();
+
+      setContract({
+        ...data,
+        content: content || "No content available",
+      });
+    } catch (error) {
+      console.error("Error fetching contract:", error);
+    }
+  };
+
+  const updateContract = async () => {
+    if (!contract) return;
+
+    try {
+      // Upload the updated file content to S3
+      const presignedResponse = await fetch(
+        `http://localhost:8000/api/contracts/presigned-post-url/?file_path=${contract.file_path}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("authToken="))
+              ?.split("=")[1]}`,
+          },
+        }
+      );
+
+      if (!presignedResponse.ok) {
+        throw new Error("Failed to fetch presigned URL");
+      }
+
+      const { url, fields } = await presignedResponse.json();
+
+      const formData = new FormData();
+      Object.entries(fields).forEach(([key, value]) => {
+        formData.append(key, value as string);
+      });
+      formData.append("file", new Blob([contract.content], { type: "text/plain" }));
+
+      const s3Response = await fetch(url, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!s3Response.ok) {
+        throw new Error("Failed to upload updated file to S3");
+      }
+
+      // Update the contract metadata
+      const response = await fetch(`http://localhost:8000/api/contracts/${id}/`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("authToken="))
+            ?.split("=")[1]}`,
+        },
+        body: JSON.stringify(contract),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update contract metadata");
+      }
+
+      const updatedContract = await response.json();
+      console.log("Contract updated:", updatedContract);
+    } catch (error) {
+      console.error("Error updating contract:", error);
+    }
+  };
+
+  const handleTextareaClick = (event: React.MouseEvent<HTMLTextAreaElement>) => {
+    const target = event.target as HTMLTextAreaElement;
+    setCaretPosition(target.selectionStart);
+  };
+
+  const handleInsertCounterparty = (cp: Counterparty) => {
+    if (!contract || caretPosition === null) return;
+
+    const before = contract.content.slice(0, caretPosition);
+    const after = contract.content.slice(caretPosition);
+    const insertion = `**Counterparty Name:** ${cp.party_name}\n`;
+
+    setContract({
+      ...contract,
+      content: before + insertion + after,
+    });
+
+    setCaretPosition(caretPosition + insertion.length); // Update caret position
+  };
+
+  const handleAddCounterparty = async () => {
+    try {
+      const response = await fetch(`http://localhost:8000/api/counterparties/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${document.cookie
+            .split("; ")
+            .find((row) => row.startsWith("authToken="))
+            ?.split("=")[1]}`,
+        },
+        body: JSON.stringify(newCounterparty),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to add counterparty");
+      }
+
+      const newCp = await response.json();
+
+      setContract((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          counterparties: [...prev.counterparties, newCp],
+        };
+      });
+
+      setNewCounterparty({
+        party_name: "",
+        party_type: "",
+        email: "",
+        isPrimary: false,
+        contract: id || "",
+      });
+
+      console.log("Counterparty added:", newCp);
+    } catch (error) {
+      console.error("Error adding counterparty:", error);
+    }
+  };
 
   useEffect(() => {
-    // Simulate fetching contract data
-    const fetchContract = async () => {
-      const fetchedContract = {
-        id: params.id,
-        title: "Sample Contract",
-        clientName: "John Doe",
-        isPublic: false,
-        sections: [
-          { id: 1, title: "1. Introduction", content: "This section covers the introduction of the contract..." },
-          { id: 2, title: "2. Scope of Work", content: "This section outlines the scope of work..." },
-        ],
-      };
-      setContract(fetchedContract);
-    };
-
     fetchContract();
-  }, [params.id]);
+  }, [id]);
 
   if (!contract) {
     return <div>Loading...</div>;
   }
 
-  const handleSectionChange = (sectionId: number, field: string, value: string) => {
-    const updatedSections = contract.sections.map((section) =>
-      section.id === sectionId ? { ...section, [field]: value } : section
-    );
-    setContract({ ...contract, sections: updatedSections });
-  };
-
-  const addSection = () => {
-    const newSection = {
-      id: contract.sections.length + 1,
-      title: `Section ${contract.sections.length + 1}`,
-      content: "",
-    };
-    setContract({ ...contract, sections: [...contract.sections, newSection] });
-  };
-
   return (
-    <div className="h-screen overflow-y-auto bg-gray-50 p-6">
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/contracts">Contracts</BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Contract Builder</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <header className="flex justify-between items-center my-6">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">{contract.title || "Contract Builder"}</h1>
-          <p className="text-gray-600">Manage contract details for {contract.clientName}</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-800">Public</span>
-            <Switch
-              checked={contract.isPublic}
-              onCheckedChange={(checked) => setContract({ ...contract, isPublic: checked })}
-            />
-          </div>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>Preview</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Preview Contract</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-gray-800">{contract.title}</h2>
-                <p className="text-sm text-gray-600">Client: {contract.clientName}</p>
-                <p className="text-sm text-gray-600">Public: {contract.isPublic ? "Yes" : "No"}</p>
-                <div className="border-t border-gray-200 pt-4">
-                  {contract.sections.map((section) => (
-                    <div key={section.id} className="mb-4">
-                      <h3 className="text-md font-medium text-gray-800">{section.title}</h3>
-                      <p className="text-sm text-gray-600">{section.content}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </header>
-
-      <div className="grid grid-cols-4 gap-6">
-        <aside className="col-span-1 bg-white p-4 rounded-lg shadow">
-          <Button className="w-full mb-4">New Contract</Button>
-          <ul className="space-y-2">
-            {contract.sections.map((section) => (
-              <li key={section.id} className="text-sm text-gray-700">
-                {section.title}
-              </li>
-            ))}
-          </ul>
-        </aside>
-
-        <main className="col-span-3 bg-white p-6 rounded-lg shadow">
-          {contract.sections.map((section) => (
-            <div key={section.id} className="mb-8 border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-4">
-                <Input
-                  value={section.title}
-                  className="w-3/4"
-                  onChange={(e) => handleSectionChange(section.id, "title", e.target.value)}
-                />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button size="icon">⋮</Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        const duplicatedSection = { ...section, id: contract.sections.length + 1 };
-                        setContract({
-                          ...contract,
-                          sections: [...contract.sections, duplicatedSection],
-                        });
-                      }}
-                    >
-                      Duplicate Section
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        const updatedSections = contract.sections.filter((s) => s.id !== section.id);
-                        setContract({ ...contract, sections: updatedSections });
-                      }}
-                    >
-                      Delete Section
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-              <Textarea
-                value={section.content}
-                rows={6}
-                placeholder="Enter section content here..."
-                onChange={(e) => handleSectionChange(section.id, "content", e.target.value)}
-              />
-            </div>
-          ))}
-          <Button variant="outline" onClick={addSection}>
-            Add Section
-          </Button>
-        </main>
+    <div className="h-screen bg-gray-50 p-6 flex flex-col">
+    <Breadcrumb>
+      <BreadcrumbList>
+        <BreadcrumbItem>
+          <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbLink href="/contracts">Contracts</BreadcrumbLink>
+        </BreadcrumbItem>
+        <BreadcrumbSeparator />
+        <BreadcrumbItem>
+          <BreadcrumbPage>Edit Contract</BreadcrumbPage>
+        </BreadcrumbItem>
+      </BreadcrumbList>
+    </Breadcrumb>
+  
+    <header className="my-6 flex justify-between items-center">
+      <div className="w-96">
+        <Input
+          value={contract.title}
+          onChange={(e) =>
+            setContract((prev) => (prev ? { ...prev, title: e.target.value } : prev))
+          }
+          placeholder="Contract Title"
+          className="text-2xl font-semibold w-full"
+        />
+        <p className="text-gray-600">Edit the contract title and details</p>
       </div>
+      <div className="flex gap-4">
+        <Button onClick={updateContract}>Save Contract</Button>
+      </div>
+    </header>
+  
+    <div className="mb-4">
+      <h2 className="text-lg font-medium">Counterparties</h2>
+      <div className="flex flex-wrap gap-2">
+        {contract.counterparties.map((cp, index) => (
+          <Button
+            key={index}
+            className="bg-gray-200 text-gray-700 rounded-full px-4 py-2 text-sm hover:bg-gray-300"
+            onClick={() => handleInsertCounterparty(cp)}
+          >
+            {cp.party_name}
+          </Button>
+        ))}
+      </div>
+  
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button className="mt-4">Add Counterparty</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Counterparty</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Party Name"
+              value={newCounterparty.party_name}
+              onChange={(e) => setNewCounterparty({ ...newCounterparty, party_name: e.target.value })}
+            />
+            <Input
+              placeholder="Party Type"
+              value={newCounterparty.party_type}
+              onChange={(e) => setNewCounterparty({ ...newCounterparty, party_type: e.target.value })}
+            />
+            <Input
+              placeholder="Email"
+              value={newCounterparty.email}
+              onChange={(e) => setNewCounterparty({ ...newCounterparty, email: e.target.value })}
+            />
+            <Switch
+              checked={newCounterparty.isPrimary}
+              onCheckedChange={(checked) =>
+                setNewCounterparty({ ...newCounterparty, isPrimary: checked })
+              }
+            />
+            <Button onClick={handleAddCounterparty}>Save Counterparty</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
+  
+    <div className="flex-1 mb-5">
+      <textarea
+        value={contract.content}
+        onClick={handleTextareaClick}
+        onChange={(e) =>
+          setContract((prev) => (prev ? { ...prev, content: e.target.value } : prev))
+        }
+        className="w-full h-full p-4 border rounded-md"
+        placeholder="Edit contract content..."
+      />
+    </div>
+  </div> 
   );
 }

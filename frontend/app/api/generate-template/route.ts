@@ -25,7 +25,7 @@ export async function POST() {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-4", // Use "gpt-3.5-turbo" if you prefer the slightly cheaper model
+        model: "gpt-4", 
         messages: [
           {
             role: "system",

@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -45,24 +45,6 @@ export default function ContractsDashboard() {
     fetchContracts();
   }, []);
 
-  const generateS3Policy = () => {
-    const expiration = new Date();
-    expiration.setHours(expiration.getHours() + 1); // Set expiration 1 hour from now
-
-    const policy = {
-      expiration: expiration.toISOString(),
-      conditions: [
-        { bucket: "docusign-hackathon-bucket" },
-        ["starts-with", "$key", "contracts/"],
-        { "x-amz-algorithm": "AWS4-HMAC-SHA256" },
-        { "x-amz-credential": "AKIASVQKH6GPAZZVYY7K/20250112/eu-north-1/s3/aws4_request" },
-        { "x-amz-date": new Date().toISOString().replace(/[:-]|\.\d{3}/g, "") + "Z" },
-      ],
-    };
-
-    return Buffer.from(JSON.stringify(policy)).toString("base64");
-  };
-
   const handleCreateContract = async (useTemplate: boolean) => {
     setDialogOpen(false);
 
@@ -70,26 +52,35 @@ export default function ContractsDashboard() {
       let filePath = "";
 
       if (useTemplate) {
-        // Step 1: Fetch the template content
-        const templateContent = await fetchTemplateFromOpenAI();
+        // Fetch the cached template from the backend
+        const templateContent = await fetchTemplateFromBackend();
 
-        // Step 2: Upload the template to S3
+        // Fetch pre-signed URL for S3 upload
+        const presignedResponse = await fetch(`${BASE_URL}/contracts/presigned-post-url/`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${document.cookie
+              .split("; ")
+              .find((row) => row.startsWith("authToken="))
+              ?.split("=")[1]}`,
+          },
+        });
+
+        if (!presignedResponse.ok) {
+          throw new Error("Failed to fetch pre-signed URL");
+        }
+
+        const presignedData = await presignedResponse.json();
+        const { url, fields } = presignedData;
+
+        // Upload the template to S3
         const formData = new FormData();
-        formData.append("key", `contracts/${Date.now()}_template.pdf`);
-        formData.append("x-amz-algorithm", "AWS4-HMAC-SHA256");
-        formData.append(
-          "x-amz-credential",
-          "AKIASVQKH6GPAZZVYY7K/20250112/eu-north-1/s3/aws4_request"
-        );
-        formData.append("x-amz-date", new Date().toISOString().replace(/[:-]|\.\d{3}/g, "") + "Z");
-        formData.append("policy", generateS3Policy());
-        formData.append(
-          "x-amz-signature",
-          "f45cce42bbc210de6375bc1da80dda78c0c14fbb95073da7aac7f50d3bfe088c"
-        );
+        Object.entries(fields).forEach(([key, value]) => {
+          formData.append(key, value as string);
+        });
         formData.append("file", new Blob([templateContent], { type: "application/pdf" }));
 
-        const s3Response = await fetch("https://docusign-hackathon-bucket.s3.amazonaws.com/", {
+        const s3Response = await fetch(url, {
           method: "POST",
           body: formData,
         });
@@ -98,10 +89,10 @@ export default function ContractsDashboard() {
           throw new Error("Failed to upload template to S3");
         }
 
-        filePath = `https://docusign-hackathon-bucket.s3.amazonaws.com/contracts/${Date.now()}_template.pdf`;
+        filePath = fields.key; // File path is the `key` from pre-signed URL
       }
 
-      // Step 3: Create the contract with the file path
+      // Create the contract with the file path
       const response = await fetch(`${BASE_URL}/contracts/`, {
         method: "POST",
         headers: {
@@ -112,8 +103,10 @@ export default function ContractsDashboard() {
             ?.split("=")[1]}`,
         },
         body: JSON.stringify({
-          title: useTemplate ? "Template Contract" : "New Contract",
-          file_path: useTemplate ? filePath : "",
+          title: useTemplate ? "Vendor Agreement between A and B" : "New Contract",
+          contract_type: "vendor agreement",
+          stage: "draft",
+          file_path: filePath,
         }),
       });
 
@@ -129,7 +122,7 @@ export default function ContractsDashboard() {
     }
   };
 
-  const fetchTemplateFromOpenAI = async (): Promise<string> => {
+  const fetchTemplateFromBackend = async (): Promise<string> => {
     try {
       const response = await fetch("/api/generate-template", { method: "POST" });
       if (!response.ok) throw new Error("Failed to fetch template");
