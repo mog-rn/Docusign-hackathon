@@ -6,10 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FormControl, FormField, FormItem, FormLabel } from "../ui/form";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
-import { getOrganizationFromEmail, OrganizationDomain } from "@/utils/organization";
-import { debounce } from "@/utils/debouce";
 import { BASE_URL } from "@/constants";
 import { useRouter } from "next/navigation";
+import { useOrganizations } from "@/hooks/useOrganization";
 
 const formSchema = z.object({
   email: z
@@ -22,9 +21,7 @@ const formSchema = z.object({
 
 export function LoginForm() {
     const [loginMessage, setLoginMessage] = useState("");
-    const [organization, setOrganization] = useState<OrganizationDomain | null>(null);
-    const [emailError, setEmailError] = useState("");
-    const [emailValid, setEmailValid] = useState(false);
+    const organizations = useOrganizations();
 
     const router = useRouter();
   
@@ -36,47 +33,7 @@ export function LoginForm() {
       },
     });
   
-    const validateEmailDomain = async (email: string) => {
-        const parts = email.split("@");
-        if (parts.length < 2 || !parts[1].trim()) {
-          // If there is no domain part after '@', do not send the request
-          setEmailError("Please enter a valid email address with a domain.");
-          setEmailValid(false); 
-          setOrganization(null); 
-          return;
-        }
-      
-        const domain = parts[1].toLowerCase(); 
-      
-        try {
-          const org = await getOrganizationFromEmail(email);
-          if (org) {
-            setOrganization(org);
-            setEmailValid(true); 
-            setEmailError(""); 
-          } else {
-            setOrganization(null);
-            setEmailValid(false); 
-            setEmailError(`No organization found for domain: ${domain}`);
-          }
-        } catch (error) {
-          console.error("Error checking organization domain:", error);
-          setEmailError("Error validating email domain. Please try again.");
-          setEmailValid(false); 
-        }
-      }; 
-  
-    
-    const handleEmailChange = debounce((email: string) => {
-      validateEmailDomain(email);
-    }, 500); 
-  
     const onSubmit = async (data: z.infer<typeof formSchema>) => {
-      if (!organization) {
-        setEmailError("Please use a valid email with a recognized organization domain.");
-        return;
-      }
-  
       try {
         const response = await fetch(`${BASE_URL}/auth/login/`, {
           method: "POST",
@@ -88,11 +45,10 @@ export function LoginForm() {
             const result = await response.json();
             setLoginMessage("Login successful!");
 
-            console.log("Login successful. Auth token:", result);
-
-            document.cookie = `authToken=${result.accessToken}; path=/;`;
-        
-            router.push('/dashboard');
+            document.cookie = `authToken=${result.access}; path=/;`;
+            document.cookie = `refreshToken=${result.refresh}; path=/;`;
+            
+            router.push(`/dashboard/${organizations[0].id}`); 
         } else {
           const errorData = await response.json();
           setLoginMessage(errorData.message || "Login failed");
@@ -119,18 +75,11 @@ export function LoginForm() {
                     {...field}
                     onChange={(e) => {
                       field.onChange(e); // Update form state
-                      handleEmailChange(e.target.value); // Debounced validation
                     }}
-                    className={`border ${
-                      emailValid ? "border-green-500" : fieldState.error ? "border-red-500" : "border-gray-300"
-                    }`}
                   />
                 </FormControl>
                 {fieldState.error && (
                   <p className="text-red-500 text-sm">{fieldState.error.message}</p>
-                )}
-                {emailError && (
-                  <p className="text-red-500 text-sm">{emailError}</p>
                 )}
               </FormItem>
             )}

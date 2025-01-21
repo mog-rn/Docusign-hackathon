@@ -1,51 +1,26 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 
-from organizations.serializer import UserSerializer
-from ..models import Organization, UserRole
+from organizations.serializers import UserSerializer
+from organizations.models import Organization, UserRole
+from authentication.serializers import UserSerializer
 
 class OrganizationUsersView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
     def get(self, request, organizationId):
-        try:
-            organization = Organization.objects.get(id=organizationId)
-        except Organization.DoesNotExist:
-            return Response(
-                {"message": "Organization does not exist."},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        organization = get_object_or_404(Organization, id=organizationId)
+        members = organization.members.all()
 
-        users_roles = UserRole.objects.filter(
-            organization=organization
-        ).select_related('user', 'role')
+        user_data = []
 
-        if not users_roles.exists():
-            return Response(
-                {"message": "No users found for the organization."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        users_data = {}
-        for user_role in users_roles:
-            user = user_role.user
-            if user.id not in users_data:
-                users_data[user.id] = {
-                    "id": user.id,
-                    "email": user.email,
-                    "first_name": user.first_name,
-                    "last_name": user.last_name,
-                    "is_organization_admin": user.is_organization_admin,
-                    "roles": [],
-                    "created_at": user.created_at
-                }
-            
-            users_data[user.id]["roles"].append({
-                "id": user_role.role.id,
-                "name": user_role.role.name,
-                "permissions": user_role.role.permissions
-            })
-
-        return Response({"users": list(users_data.values())}, status=status.HTTP_200_OK)
+        for member in members:
+            member_data = UserSerializer(member).data
+            member_roles = member.roles.filter(role__organization=organization)
+            member_data['roles'] = [role.role.name for role in member_roles]
+            user_data.append(member_data)
+        
+        return Response(user_data, status=status.HTTP_200_OK)

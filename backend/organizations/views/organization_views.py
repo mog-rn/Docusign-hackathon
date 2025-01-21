@@ -1,93 +1,85 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from core.permissions import IsMainAdmin
-from core.models import User
-from organizations.serializer import OrganizationSerializer
-from ..models import Organization, UserRole, Role
+from core.permissions import IsOrganizationAdmin, IsMainAdmin
+from organizations.serializers import OrganizationSerializer
+from organizations.models import Organization, UserRole, Role
 
-class OrganizationCreateView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated, IsMainAdmin]
+class OrganizationListCreateView(generics.ListCreateAPIView):
+    """
+    List all organizations or create a new organization.
+
+    - The list operation is restricted to superusers only.
+    - The create operation checks if the user is already part of an organization.
+      If not, it associates the user with the new organization and assigns them
+      an admin role within that organization, unless the user is a Django superuser.
+    """
+    queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
+    permission_classes = [IsAuthenticated]
 
-    def post(self, request, *args, **kwargs):
+    def create(self, request, *args, **kwargs):
+        """
+        Create a new organization and automatically make user an admin,
+        unless the user is a superuser.
+        """
+        user = request.user
+
+        if user.organization:
+            return Response(
+                {"message": "User already belongs to an organization."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
             organization = serializer.save()
 
-            admin_role, _ = Role.objects.get_or_create(
-                name="admin",
-                organization=organization,
-                defaults={
-                    'permissions': {
-                        "can_invite": True,
-                        "can_manage_users": True,
-                        "can_manage_roles": True,
-                        "can_manage_permissions": True,
-                        "can_manage_organization": True,
-                        "is_organization_admin": True
-                    }
-                }
-            )
+            if not user.is_superuser:
+                # django superuser should not be associated with any organization
+                user.organization = organization
+                user.save()
 
-            # Add the main admin 
-            main_admin = User.objects.get(is_main_admin=True)
-            main_admin.is_organization_admin = True
-            main_admin.save()
-
-            UserRole.objects.create(
-                user=main_admin,
-                organization=organization,
-                role=admin_role
-            )
-
-            if request.user != main_admin:
-                request.user.is_organization_admin = True
-                request.user.save()
-
-                UserRole.objects.create(
-                    user=request.user,
+                admin_role, _ = Role.objects.get_or_create(
+                    name="admin",
                     organization=organization,
-                    role=admin_role
+                    defaults={
+                        'permissions': {
+                            "can_invite": True,
+                            "can_manage_users": True,
+                            "can_manage_roles": True,
+                            "can_manage_permissions": True,
+                            "can_manage_organization": True,
+                            "is_organization_admin": True
+                        }
+                    }
                 )
 
-            return Response(
-                {
-                    "message": "Organization created successfully!", 
-                    "organization": serializer.data,
-                    "admin_role": {
-                        "id": admin_role.id,
-                        "name": admin_role.name,
-                        "permissions": admin_role.permissions
-                    }
-                },
-                status=status.HTTP_201_CREATED
-            )
+                UserRole.objects.create(user=user, role=admin_role)
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-class OrganizationListView(generics.ListAPIView):
+    def list(self, request, *args, **kwargs):
+        """
+        List all organizations, accessible only to superusers.
+        """
+        user = request.user
+        if not user.is_superuser:
+            return Response(
+                {"message": "You do not have permission to perform this action."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        return super().list(request, *args, **kwargs)
+
+
+class OrganizationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     """
-    View to retrieve all organizations from the database.
-    Only authenticated users with the 'main_admin' role can access this view.
+    Retrieve, update or delete an organization.
+
+    User must be either an organization admin or a Django superuser to access this view.
     """
+    permission_classes = [IsAuthenticated, IsOrganizationAdmin | IsMainAdmin]
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
-    permission_classes = [IsAuthenticated, IsMainAdmin]
-
-class OrganizationDeleteView(generics.DestroyAPIView):
-    """
-    Delete an organization.
-    Only authenticated users with the 'main_admin' role can access this view.
-    """
-    permission_classes = [IsAuthenticated, IsMainAdmin]
-    queryset = Organization.objects.all()
-    serializer_class = OrganizationSerializer
-
-    def delete(self, request, *args, **kwargs):
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response(
-            {"message": "Organization deleted successfully!"},
-            status=status.HTTP_204_NO_CONTENT
-        )

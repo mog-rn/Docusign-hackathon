@@ -2,8 +2,12 @@ venv
 *.sqlite3
 *.pyc
 ___pycache__/
-env
+*env
 trial.py
 todo.md
 sendgrid.env
 .env
+esignature
+123.pdf
+private.key
+/logs/

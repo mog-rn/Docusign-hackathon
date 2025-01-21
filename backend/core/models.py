@@ -18,7 +18,6 @@ class UserManager(BaseUserManager):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         extra_fields.setdefault('is_active', True)
-        extra_fields.setdefault('is_main_admin', True)
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True')
@@ -28,11 +27,12 @@ class UserManager(BaseUserManager):
         return self.create_user(email, password, first_name, last_name, **extra_fields)
 
 class User(AbstractBaseUser, PermissionsMixin):
+    """
+    Custom User model to use email as identifier instead of username.
+    """
     email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=240)
     last_name = models.CharField(max_length=240)
-    is_organization_admin = models.BooleanField(default=False) # Organization admin
-    is_main_admin = models.BooleanField(default=False) # Django admin
     organization = models.ForeignKey('organizations.Organization', on_delete=models.CASCADE, null=True, blank=True, related_name='members')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -45,7 +45,10 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['first_name', 'last_name']
 
-def __str__(self):
-    return f'Email: {self.email}\n' \
-           f'Name: {self.first_name} {self.last_name}\n' \
-           f'Organization: {self.organization.name if self.organization else "None"}'
+    def __str__(self):
+        """
+        Return a string representation of the User, including email, first_name, last_name, and organization name.
+        """
+        return f'Email: {self.email}\n' \
+            f'Name: {self.first_name} {self.last_name}\n' \
+            f'Organization: {self.organization.name if self.organization else "None"}'
