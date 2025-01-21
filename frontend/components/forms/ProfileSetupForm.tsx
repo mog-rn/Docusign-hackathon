@@ -13,6 +13,7 @@ import { BASE_URL } from "@/constants";
 
 // Validation schema
 const formSchema = z.object({
+
     username: z.string().min(3, {
         message: "Username must be at least 3 characters",
     }),
