@@ -122,7 +122,7 @@ STATIC_URL = "/static/"
 
 if DEBUG:
     STATICFILES_DIRS = [BASE_DIR / "static"]
-    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 else:
     GS_BUCKET_NAME = os.getenv("GS_BUCKET_NAME", "clm-static-assets")
     STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
@@ -160,6 +160,7 @@ USE_X_FORWARDED_PORT = True
 
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "localhost").split(",")
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
