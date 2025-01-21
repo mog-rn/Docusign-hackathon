@@ -14,6 +14,7 @@ from users.serializers import UserSerializer
 
 logger = logging.getLogger(__name__)
 
+
 class RegisterView(generics.CreateAPIView):
     """
     Register a new user and return the access and refresh tokens.
@@ -32,7 +33,9 @@ class RegisterView(generics.CreateAPIView):
             refresh_token = str(refresh)
             token_pair = {"access": access_token, "refresh": refresh_token}
 
-            return Response(token_pair, status=status.HTTP_201_CREATED)
+            response = Response(token_pair, status=status.HTTP_201_CREATED)
+
+            return response
         else:
             errors = serializer.errors
             email_errors = errors.get("email", None)
