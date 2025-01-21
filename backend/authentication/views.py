@@ -18,6 +18,7 @@ from users.serializers import UserSerializer
 
 logger = logging.getLogger(__name__)
 
+
 class RegisterView(generics.CreateAPIView):
     """
     Register a new user and return the access and refresh tokens.
