@@ -21,6 +21,7 @@ class IsOrganizationAdmin(BasePermission):
         is_organization_admin = user.roles.filter(
             role__name="admin", role__organization=user.organization
         ).exists()
+        print(is_organization_admin)
         return is_organization_admin
 
 
