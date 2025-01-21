@@ -1,11 +1,11 @@
 export interface Counterparty {
-    id: string;
+    id?: string;
     party_name: string;
     party_type: string;
     email: string;
     isPrimary: boolean;
-    added_at: string;
-    updated_at: string;
+    added_at?: string;
+    updated_at?: string;
     contract: string;
   }
   
@@ -29,4 +29,5 @@ export interface Counterparty {
     created_by: number;
     last_modified_by: number;
     counterparties: Counterparty[];
+    content: string;
   }

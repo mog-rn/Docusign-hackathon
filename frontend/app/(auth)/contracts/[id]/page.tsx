@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import {
   Breadcrumb,
@@ -14,33 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
-type Counterparty = {
-  id?: string;
-  party_name: string;
-  party_type: string;
-  email: string;
-  isPrimary: boolean;
-  contract: string;
-};
-
-type Contract = {
-  id: string;
-  title: string;
-  description?: string;
-  contract_type: string;
-  stage: string;
-  effective_from?: string;
-  expires_on?: string;
-  is_renewable: boolean;
-  renewal_count: number;
-  renewed_on?: string;
-  terminated_at?: string;
-  terminated_reason?: string;
-  file_path: string;
-  counterparties: Counterparty[];
-  content: string; // Text content for editing in the UI
-};
+import { Contract, Counterparty } from "@/types/contracts";
+import { BASE_URL } from "@/constants";
 
 export default function ContractBuilderPage() {
   const params = useParams();
@@ -55,14 +30,14 @@ export default function ContractBuilderPage() {
   });
   const [caretPosition, setCaretPosition] = useState<number | null>(null);
 
-  const fetchContract = async () => {
+  const fetchContract = useCallback(async () => {
     if (!id) {
       console.error("No contract ID provided");
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:8000/api/contracts/${id}/`, {
+      const response = await fetch(`${BASE_URL}/contracts/${id}/`, {
         headers: {
           Authorization: `Bearer ${document.cookie
             .split("; ")
@@ -79,7 +54,7 @@ export default function ContractBuilderPage() {
 
       // Fetch presigned download URL for the S3 file
       const downloadResponse = await fetch(
-        `http://localhost:8000/api/contracts/presigned-download-url/?file_path=${data.file_path}`,
+        `${BASE_URL}/contracts/presigned-download-url/?file_path=${data.file_path}`,
         {
           headers: {
             Authorization: `Bearer ${document.cookie
@@ -111,7 +86,7 @@ export default function ContractBuilderPage() {
     } catch (error) {
       console.error("Error fetching contract:", error);
     }
-  };
+  }, [id]);
 
   const updateContract = async () => {
     if (!contract) return;
@@ -119,7 +94,7 @@ export default function ContractBuilderPage() {
     try {
       // Upload the updated file content to S3
       const presignedResponse = await fetch(
-        `http://localhost:8000/api/contracts/presigned-post-url/?file_path=${contract.file_path}`,
+        `${BASE_URL}/contracts/presigned-post-url/?file_path=${contract.file_path}`,
         {
           method: "GET",
           headers: {
@@ -153,7 +128,7 @@ export default function ContractBuilderPage() {
       }
 
       // Update the contract metadata
-      const response = await fetch(`http://localhost:8000/api/contracts/${id}/`, {
+      const response = await fetch(`${BASE_URL}/contracts/${id}/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -198,7 +173,7 @@ export default function ContractBuilderPage() {
 
   const handleAddCounterparty = async () => {
     try {
-      const response = await fetch(`http://localhost:8000/api/counterparties/`, {
+      const response = await fetch(`${BASE_URL}/counterparties/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -241,7 +216,7 @@ export default function ContractBuilderPage() {
 
   useEffect(() => {
     fetchContract();
-  }, [id]);
+  }, [fetchContract]);
 
   if (!contract) {
     return <div>Loading...</div>;

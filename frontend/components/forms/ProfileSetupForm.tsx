@@ -9,6 +9,7 @@ import { Button } from "../ui/button";
 import { FormItem, FormLabel } from "../ui/form";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
+import { BASE_URL } from "@/constants";
 
 // Validation schema
 const formSchema = z.object({
@@ -84,7 +85,7 @@ export function ProfileSetupForm() {
 
             isRefreshingToken.current = true;
 
-            const response = await fetch("http://localhost:8000/api/auth/refresh/", {
+            const response = await fetch(`${BASE_URL}/auth/refresh/`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ refresh: refreshToken }),
