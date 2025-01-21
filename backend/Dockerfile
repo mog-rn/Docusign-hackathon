@@ -1,4 +1,4 @@
-# Use Python 3.12 slim image
+# Use Python 3.11 slim image
 FROM python:3.11-slim
 
 # Declare build arguments for AWS credentials
