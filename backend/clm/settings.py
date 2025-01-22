@@ -25,7 +25,7 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'apikey'
 SENDGRID_API_KEY = os.getenv('SENDGRID_API_KEY')
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
-SENDGRID_SANDBOX_MODE_IN_DEBUG = False
+SENDGRID_SANDBOX_MODE_IN_DEBUG = DEBUG  # Enable sandbox mode during debug
 SENDGRID_ECHO_TO_STDOUT = True
 
 # Frontend URL for invitation links
@@ -57,13 +57,16 @@ INSTALLED_APPS = [
 AUTH_USER_MODEL = 'core.User'
 
 # CORS Settings
-# CORS Settings
 CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '').split(',')
-CORS_ALLOW_ALL_ORIGINS = False  
-CORS_ALLOW_CREDENTIALS = True 
+if not DEBUG and not CORS_ALLOWED_ORIGINS:
+    raise ValueError("CORS_ALLOWED_ORIGINS must be set in production.")
+CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins during development
+CORS_ALLOW_CREDENTIALS = True
 
 # CSRF Settings
 CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+if not DEBUG and not CSRF_TRUSTED_ORIGINS:
+    raise ValueError("CSRF_TRUSTED_ORIGINS must be set in production.")
 
 # Middleware
 MIDDLEWARE = [
@@ -115,7 +118,7 @@ STATIC_URL = '/static/'
 
 if DEBUG:
     STATICFILES_DIRS = [BASE_DIR / 'static']
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
 else:
     GS_BUCKET_NAME = os.getenv('GS_BUCKET_NAME', 'clm-static-assets')
     STATICFILES_STORAGE = 'storages.backends.gcloud.GoogleCloudStorage'
@@ -126,7 +129,6 @@ else:
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-# Check Password Validators
 # Password Validators
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
@@ -224,6 +226,6 @@ LOGGING = {
 
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
-AWS_STORAGE_BUCKET_NAME=os.getenv("AWS_STORAGE_BUCKET_NAME")
+AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME")
-AWS_PRESIGNED_EXPIRY = int(os.getenv("AWS_PRESIGNED_EXPIRY"))
+AWS_PRESIGNED_EXPIRY = int(os.getenv("AWS_PRESIGNED_EXPIRY", 3600))  # Default 1 hour
