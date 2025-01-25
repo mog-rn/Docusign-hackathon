@@ -30,4 +30,6 @@ export interface Counterparty {
     last_modified_by: number;
     counterparties: Counterparty[];
     content: string;
+
+    pdfUrl?: string;
   }
