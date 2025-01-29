@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "organizations",
     "contracts",
     "counterparties",
+    "esignature",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -236,4 +237,7 @@ AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME")
-AWS_PRESIGNED_EXPIRY = int(os.getenv("AWS_PRESIGNED_EXPIRY", 3600))  
+AWS_PRESIGNED_EXPIRY = int(os.getenv("AWS_PRESIGNED_EXPIRY"))
+
+# signatureAPI configuration
+SIGNATUREAPI_API_KEY = os.getenv("SIGNATUREAPI_API_KEY")
