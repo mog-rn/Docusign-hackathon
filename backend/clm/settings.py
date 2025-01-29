@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     "organizations",
     "contracts",
     "counterparties",
+    "esignature",
 ]
 
 AUTH_USER_MODEL = "core.User"
@@ -231,10 +232,5 @@ AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME")
 AWS_PRESIGNED_EXPIRY = int(os.getenv("AWS_PRESIGNED_EXPIRY"))
 
-# Docusign configuration
-DOCUSIGN_JWT_CLIENT_ID = os.getenv("DOCUSIGN_JWT_CLIENT_ID")
-DOCUSIGN_IMPERSONATED_USER_ID = os.getenv("DOCUSIGN_IMPERSONATED_USER_ID")
-DOCUSIGN_OAUTH_SERVER = os.getenv("DOCUSIGN_OAUTH_SERVER")
-DOCUSIGN_BASE_PATH = os.getenv("DOCUSIGN_BASE_PATH")
-JWT_LIFE_SECONDS = int(os.getenv("JWT_LIFE_SECONDS", 3600))
-DOCUSIGN_ACCOUNT_ID = os.getenv("DOCUSIGN_ACCOUNT_ID")
+# signatureAPI configuration
+SIGNATUREAPI_API_KEY = os.getenv("SIGNATUREAPI_API_KEY")
