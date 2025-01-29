@@ -15,6 +15,7 @@ class Contract(models.Model):
         "monitoring": "Monitoring",
         "renewal": "Renewal",
         "termination": "Termination",
+        "rejected": "Rejected",
     }
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
