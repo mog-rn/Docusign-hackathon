@@ -10,4 +10,4 @@ sendgrid.env
 esignature
 123.pdf
 private.key
-/logs/
+logs/
