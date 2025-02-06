@@ -1,19 +1,19 @@
-from rest_framework import generics, status
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404
-
-from counterparties.models import Counterparty
 from contracts.models import Contract
-from organizations.models import Organization
-from counterparties.serializers import CounterpartySerializer
 from core.permissions import IsOrganizationAdmin
+from counterparties.models import Counterparty
+from counterparties.serializers import CounterpartySerializer
+from django.shortcuts import get_object_or_404
+from rest_framework import generics, status
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 
 class CounterpartyListCreateView(generics.ListCreateAPIView):
     """
     List counterparties for user's organization or create a new one.
     """
+
     permission_classes = [IsAuthenticated, IsOrganizationAdmin]
     serializer_class = CounterpartySerializer
 
@@ -26,12 +26,15 @@ class CounterpartyListCreateView(generics.ListCreateAPIView):
         Create a new counterparty.
         """
         user = request.user
-        contract_id = request.data.get('contract')
+        contract_id = request.data.get("contract")
         contract = get_object_or_404(Contract, id=contract_id)
 
         if contract.organization != user.organization:
-            return Response({'error': "The contract does not belong user's organization"}, status=status.HTTP_403_FORBIDDEN)
-        
+            return Response(
+                {"error": "The contract does not belong user's organization"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
@@ -43,6 +46,7 @@ class CounterpartyRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVie
     """
     Retrieve, update or delete a counterparty.
     """
+
     permission_classes = [IsAuthenticated, IsOrganizationAdmin]
     serializer_class = CounterpartySerializer
     queryset = Counterparty.objects.all()
@@ -54,14 +58,15 @@ class CounterpartyRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVie
         """
         user = request.user
         organization = user.organization
-        
+
         counterparty = self.get_object()
 
         if counterparty.contract.organization != organization:
-            raise PermissionDenied({'error': "The counterparty is not associated with user's organization"})
-        
-        return counterparty
+            raise PermissionDenied(
+                {"error": "The counterparty is not associated with user's organization"}
+            )
 
+        return counterparty
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -70,24 +75,28 @@ class CounterpartyRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVie
         counterparty = self.check_organization_and_get_counterparty(request)
         serializer = self.get_serializer(counterparty)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
 
     def update(self, request, *args, **kwargs):
         """
         Update a counterparty.
         """
         counterparty = self.check_organization_and_get_counterparty(request)
-        partial = kwargs.pop('partial', False)
-        serializer = self.get_serializer(counterparty, data=request.data, partial=partial)
+        partial = kwargs.pop("partial", False)
+        serializer = self.get_serializer(
+            counterparty, data=request.data, partial=partial
+        )
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def destroy(self, request, *args, **kwargs):
         """
         Delete a counterparty.
         """
         counterparty = self.check_organization_and_get_counterparty(request)
         counterparty.delete()
-        return Response({'message': 'Counterparty deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+        return Response(
+            {"message": "Counterparty deleted successfully"},
+            status=status.HTTP_204_NO_CONTENT,
+        )

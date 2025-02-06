@@ -12,7 +12,7 @@ from rest_framework_simplejwt.views import (
 schema_view = get_schema_view(
     openapi.Info(
         title="CLM Management API",
-        default_version='v1',
+        default_version="v1",
         description="This is the API for the Contract Lifecycle Management System",
         terms_of_service="https://www.example.com/terms/",
         contact=openapi.Contact(email="your-email@example.com"),
@@ -23,10 +23,11 @@ schema_view = get_schema_view(
 )
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/auth/', include('authentication.urls')),
-    path('api/organizations/', include('organizations.urls')),
-    path('api/contracts/', include('contracts.urls')),
-    path('api/counterparties/', include('counterparties.urls')),
-    path('', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    path("admin/", admin.site.urls),
+    path("api/auth/", include("authentication.urls")),
+    path("api/users/", include("users.urls")),
+    path("api/organizations/", include("organizations.urls")),
+    path("api/contracts/", include("contracts.urls")),
+    path("api/counterparties/", include("counterparties.urls")),
+    path("", schema_view.with_ui("redoc", cache_timeout=0), name="schema-redoc"),
 ]
