@@ -228,12 +228,12 @@ export function CreateContractForm({ onSuccess, onCancel }: CreateContractFormPr
                     Upload my own file
                   </label>
                 </div>
-                <div className="flex items-center space-x-2">
+                {/* <div className="flex items-center space-x-2">
                   <RadioGroupItem value="template" id="template" />
                   <label htmlFor="template" className="cursor-pointer">
                     Generate from template
                   </label>
-                </div>
+                </div> */}
               </RadioGroup>
             )}
           />
@@ -242,7 +242,7 @@ export function CreateContractForm({ onSuccess, onCancel }: CreateContractFormPr
         {/* If user chooses "upload", show a file input */}
         {form.watch("fileOption") === "upload" && (
           <FormItem>
-            <FormLabel htmlFor="file">Choose PDF or doc</FormLabel>
+            <FormLabel htmlFor="file">Choose PDF or DOCX</FormLabel>
             <Controller
               name="file"
               control={form.control}
@@ -251,12 +251,12 @@ export function CreateContractForm({ onSuccess, onCancel }: CreateContractFormPr
                   <Input
                     id="file"
                     type="file"
-                    accept=".pdf,application/pdf"
+                    accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                     onChange={(e) => {
                       field.onChange(e.target.files);
                     }}
                   />
-                  {/* Show error if user selected 'upload' but didn't provide a file */}
+                  {/* Show error if user selected 'upload' but didn't provide a valid file */}
                   {form.formState.errors.file && (
                     <p className="text-red-500 text-sm mt-1">
                       {form.formState.errors.file.message as string}
@@ -267,6 +267,7 @@ export function CreateContractForm({ onSuccess, onCancel }: CreateContractFormPr
             />
           </FormItem>
         )}
+
 
         {/* Buttons */}
         <div className="mt-4 flex items-center justify-end gap-2">
