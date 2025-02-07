@@ -46,7 +46,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
           return;
         }
 
-        const response = await fetch(`${BASE_URL}/auth/profile/`, {
+        const response = await fetch(`${BASE_URL}/users/profile/`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

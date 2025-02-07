@@ -25,7 +25,7 @@ export default function ContractsDashboard() {
 
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [previewFileType, setPreviewFileType] = useState<"pdf" | "image" | null>(null);
+  const [previewFileType, setPreviewFileType] = useState<"pdf" | "image" | "docx" | null>(null);
 
   useEffect(() => {
     const fetchContracts = async () => {
@@ -68,27 +68,59 @@ export default function ContractsDashboard() {
     setCreateFormOpen(false);
   };
 
+  const handleUploadToS3 = async (blob: Blob, contractId: string) => {
+    try {
+      const fileType = blob.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ? "docx" : "pdf";
+      const fileName = fileType === "docx" ? "contract.docx" : "contract.pdf";
+      const file = new File([blob], fileName, { type: blob.type });
+
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("authToken="))
+        ?.split("=")[1];
+
+      const presignedRes = await fetch(
+        `${BASE_URL}/contracts/upload-url?contract_id=${contractId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ filename: file.name, filetype: file.type }),
+        }
+      );
+
+      if (!presignedRes.ok) {
+        throw new Error("Failed to get S3 upload URL");
+      }
+
+      const { url, fields } = await presignedRes.json();
+
+      const formData = new FormData();
+      Object.entries(fields).forEach(([key, value]) => {
+        formData.append(key, value as string);
+      });
+      formData.append("file", file);
+
+      const uploadRes = await fetch(url, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("S3 upload failed");
+      }
+
+      console.log("Upload successful");
+    } catch (error) {
+      console.error("Error uploading file to S3:", error);
+    }
+  };
+
   const handlePreviewClick = async (contract: Contract) => {
     if (!contract.file_path) {
       setError("No file to preview.");
-      return;
-    }
-
-    let fileExtension = "";
-    if (contract.file_path.includes(".")) {
-      fileExtension = contract.file_path.split(".").pop() || "";
-    }
-
-    if (fileExtension === "pdf") {
-      setPreviewFileType("pdf");
-    } else if (
-      fileExtension === "png" ||
-      fileExtension === "jpg" ||
-      fileExtension === "jpeg"
-    ) {
-      setPreviewFileType("image");
-    } else {
-      setError("Unsupported file type for preview.");
       return;
     }
 
@@ -98,7 +130,7 @@ export default function ContractsDashboard() {
         .find((row) => row.startsWith("authToken="))
         ?.split("=")[1];
 
-      const presignedRes = await fetch(
+      const res = await fetch(
         `${BASE_URL}/contracts/presigned-download-url/?file_path=${encodeURIComponent(
           contract.file_path
         )}`,
@@ -109,18 +141,28 @@ export default function ContractsDashboard() {
         }
       );
 
-      if (!presignedRes.ok) {
+      if (!res.ok) {
         throw new Error("Failed to fetch presigned download URL");
       }
 
-      const presignedData = await presignedRes.json();
-      setPreviewUrl(presignedData.url);
-      setPreviewOpen(true); // open the preview modal
-    } catch (fetchErr) {
-      console.error("Preview error:", fetchErr);
+      const data = await res.json();
+      const fileResponse = await fetch(data.url);
+      const blob = await fileResponse.blob();
+
+      console.log("Fetched file blob:", blob);
+
+      const extension = blob.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ? "docx" : "pdf";
+      setPreviewFileType(extension);
+
+      await handleUploadToS3(blob, contract.id);
+
+      setPreviewUrl(data.url);
+      setPreviewOpen(true);
+    } catch (error) {
+      console.error("Preview error:", error);
       setError("Failed to load file preview.");
     }
-  };
+  }; 
 
   if (loading) {
     return (
@@ -175,12 +217,14 @@ export default function ContractsDashboard() {
                       className="rounded-md object-cover w-full h-[100px] cursor-pointer"
                       onClick={() => router.push(`/contracts/${contract.id}`)}
                     />
-                  ) : contract.file_path.endsWith(".pdf") ? (
+                  ) : contract.file_path.endsWith(".pdf") || contract.file_path.endsWith(".docx") ? (
                     <div
                       onClick={() => router.push(`/contracts/${contract.id}`)}
                       className="w-full h-[100px] bg-gray-200 flex items-center justify-center rounded-md cursor-pointer"
                     >
-                      <p className="text-sm text-gray-600">PDF Document</p>
+                      <p className="text-sm text-gray-600">
+                        {contract.file_path.endsWith(".pdf") ? "PDF Document" : "DOCX Document"}
+                      </p>
                     </div>
                   ) : (
                     <div
@@ -209,7 +253,7 @@ export default function ContractsDashboard() {
                     {contract.title}
                   </h3>
                   <p className="text-xs text-gray-500">
-                    Last updated:{" "}
+                    Last updated: {" "}
                     {new Date(contract.last_modified_at).toLocaleDateString()}
                   </p>
                   <span
@@ -261,6 +305,8 @@ export default function ContractsDashboard() {
                 alt="Image preview"
                 className="max-w-full max-h-[600px] object-contain"
               />
+            ) : previewUrl && previewFileType === "docx" ? (
+              <p className="text-gray-600">DOCX file preview is not supported. Download to view.</p>
             ) : (
               <p>No preview available</p>
             )}
