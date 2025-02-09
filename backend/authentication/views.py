@@ -1,16 +1,19 @@
-from rest_framework import status, generics
-from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework_simplejwt.tokens import RefreshToken
-
 from authentication.models import Invitation
-from authentication.serializers import InvitationSerializer, UserSerializer
-from authentication.utils import login_response_constructor
+from authentication.serializers import InvitationSerializer
+from authentication.utils import login_response_constructor, send_invitation_email
 from core.permissions import IsOrganizationAdmin
+from django.conf import settings
+from django.utils import timezone
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from django.conf import settings
 from authentication.utils import send_invitation_email
+
+from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from users.serializers import UserSerializer
 
 
 class RegisterView(generics.CreateAPIView):
@@ -160,14 +163,4 @@ class AcceptInvitationView(generics.GenericAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserProfileView(APIView):
-    """
-    Get user profile information.
-    """
 
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request, *args, **kwargs):
-        user = request.user
-        serializer = UserSerializer(user)
-        return Response(serializer.data)

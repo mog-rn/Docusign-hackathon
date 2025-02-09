@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "corsheaders",
     "core",
+    "users",
     "authentication",
     "organizations",
     "contracts",
@@ -55,7 +56,7 @@ INSTALLED_APPS = [
     "esignature",
 ]
 
-AUTH_USER_MODEL = "core.User"
+AUTH_USER_MODEL = "users.User"
 
 # CORS Settings
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
@@ -65,7 +66,7 @@ CORS_ALLOW_ALL_ORIGINS = DEBUG  # Allow all origins during development
 CORS_ALLOW_CREDENTIALS = True
 
 # CSRF Settings
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "localhost").split(",")
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 if not DEBUG and not CSRF_TRUSTED_ORIGINS:
     raise ValueError("CSRF_TRUSTED_ORIGINS must be set in production.")
 

@@ -1,8 +1,5 @@
+from organizations.models import Organization, Role
 from rest_framework import serializers
-
-from core.models import User
-from .models import Organization, Role
-from django.db import transaction
 
 
 class OrganizationSerializer(serializers.ModelSerializer):
@@ -10,7 +7,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Organization
         fields = ["id", "name", "created_at", "updated_at"]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = ["id", "created_at"]
 
 
 class RoleSerializer(serializers.ModelSerializer):
@@ -90,24 +87,3 @@ class UpdatePermissionsSerializer(serializers.ModelSerializer):
         model = Role
         fields = ["permissions"]
         read_only_fields = ["id", "name"]
-
-
-class OrganizationMemberSerializer(serializers.ModelSerializer):
-    role = serializers.CharField()
-
-    class Meta:
-        model = User
-        fields = ["id", "email", "first_name", "last_name", "created_at"]
-
-
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = [
-            "id",
-            "email",
-            "first_name",
-            "last_name",
-            "is_organization_admin",
-            "created_at",
-        ]

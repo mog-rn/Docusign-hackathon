@@ -1,4 +1,5 @@
 import uuid
+
 from django.db import models
 
 
@@ -35,14 +36,14 @@ class Contract(models.Model):
     terminated_reason = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
-        "core.User",
+        "users.User",
         on_delete=models.SET_NULL,
         null=True,
         related_name="created_contracts",
     )
     last_modified_at = models.DateTimeField(auto_now=True)
     last_modified_by = models.ForeignKey(
-        "core.User",
+        "users.User",
         on_delete=models.SET_NULL,
         null=True,
         related_name="modified_contracts",

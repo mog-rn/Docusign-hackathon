@@ -22,6 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Contract, Counterparty } from "@/types/contracts";
 import { BASE_URL } from "@/constants";
+import { Document, Packer, Paragraph } from "docx"
+import mammoth from "mammoth";
 
 export default function ContractBuilderPage() {
   const params = useParams();
@@ -50,9 +52,8 @@ export default function ContractBuilderPage() {
       console.error("No contract ID provided");
       return;
     }
-
+  
     try {
-      // 1) Fetch contract metadata
       const response = await fetch(`${BASE_URL}/contracts/${id}/`, {
         headers: {
           Authorization: `Bearer ${
@@ -63,14 +64,14 @@ export default function ContractBuilderPage() {
           }`,
         },
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch contract details");
       }
-
+  
       const data = await response.json();
-
-      // 2) Get the presigned download URL
+  
+      // Fetch the presigned download URL
       const downloadResponse = await fetch(
         `${BASE_URL}/contracts/presigned-download-url/?file_path=${data.file_path}`,
         {
@@ -84,37 +85,81 @@ export default function ContractBuilderPage() {
           },
         }
       );
-
+  
       if (!downloadResponse.ok) {
         throw new Error("Failed to fetch presigned download URL");
       }
-
+  
       const downloadData = await downloadResponse.json();
-
-      // 3) Fetch the file as a Blob (treat all as PDF)
+  
+      // Fetch the file as a Blob
       const s3Response = await fetch(downloadData.url);
       if (!s3Response.ok) {
         throw new Error("Failed to download file content");
       }
-
+  
       const blob = await s3Response.blob();
-      // Log the blob so you see what file was fetched
-      console.log("Fetched file blob (treating as PDF):", blob);
-
-      // Create a temporary URL for the blob
-      const blobUrl = URL.createObjectURL(blob);
-      setPdfBlobUrl(blobUrl);
+      console.log("Fetched file blob:", blob);
+  
       setFileBlob(blob);
-
-      // Store the rest of the contract info
-      setContract({
-        ...data,
-        content: "",
-      });
+      setContract({ ...data, content: "" });
+  
+      // 🔹 Fix MIME Type Detection
+      let fileType = blob.type;
+      if (!fileType || fileType === "docx") {
+        console.warn("Invalid or missing MIME type, defaulting to DOCX.");
+        fileType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      }
+  
+      if (fileType === "application/pdf") {
+        const blobUrl = URL.createObjectURL(blob);
+        setPdfBlobUrl(blobUrl);
+      } else if (fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+        renderDocx(blob);
+      } else {
+        console.warn("Unsupported file type:", fileType);
+      }
     } catch (error) {
       console.error("Error fetching contract:", error);
     }
-  }, [id]);
+  }, [id]); 
+
+  const renderDocx = async (docxBlob: Blob) => {
+    try {
+      const arrayBuffer = await docxBlob.arrayBuffer();
+      const container = document.getElementById("docx-container");
+  
+      if (!container) {
+        console.error("DOCX container not found");
+        return;
+      }
+  
+      container.innerHTML = ""; // Clear previous content
+  
+      // 🔹 Convert DOCX to plain text (instead of HTML) to preserve structure
+      const result = await mammoth.extractRawText({ arrayBuffer });
+  
+      // Render as an editable `<textarea>` (instead of `contentEditable`)
+      container.innerHTML = `
+        <textarea id="editable-docx" class="border p-4 rounded bg-white w-full h-full max-h-[450px] overflow-auto">${result.value}</textarea>
+        <button id="save-docx-btn"
+          class="mt-4 bg-blue-500 text-white py-2 px-4 rounded w-full">
+          Save Edited DOCX
+        </button>
+      `;
+  
+      // Wait for DOM update, then attach event listener
+      setTimeout(() => {
+        const saveButton = document.getElementById("save-docx-btn");
+        if (saveButton) {
+          saveButton.addEventListener("click", saveEditedDocx);
+        }
+      }, 100);
+  
+    } catch (error) {
+      console.error("Error rendering DOCX:", error);
+    }
+  };
 
   // Clean up object URL
   useEffect(() => {
@@ -219,6 +264,91 @@ export default function ContractBuilderPage() {
       console.log("Currently loaded file (treated as PDF) blob:", fileBlob);
     } else {
       console.log("No file blob currently loaded.");
+    }
+  };
+
+  const saveEditedDocx = async () => {
+    const textarea = document.getElementById("editable-docx") as HTMLTextAreaElement;
+    if (!textarea) {
+      console.error("Editable DOCX container not found");
+      return;
+    }
+  
+    const editedText = textarea.value; // 🔹 Extract raw text
+  
+    // 🔹 Convert back to structured DOCX format
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: editedText.split("\n").map((line) => new Paragraph(line)), // Convert each line to a paragraph
+        },
+      ],
+    });
+  
+    const docxBlob = await Packer.toBlob(doc);
+  
+    try {
+      if (!contract?.file_path) {
+        throw new Error("No existing file path found for this contract.");
+      }
+  
+      await uploadEditedDocxToS3(docxBlob, contract.file_path);
+      console.log("Edited DOCX file successfully uploaded and replaced!");
+    } catch (error) {
+      console.error("Error uploading edited DOCX:", error);
+    }
+  };
+
+  const uploadEditedDocxToS3 = async (fileBlob: Blob, existingFilePath: string) => {
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("authToken="))
+        ?.split("=")[1];
+  
+      if (!token) {
+        throw new Error("User authentication token missing");
+      }
+  
+      // 🔹 Request a presigned upload URL for the existing file
+      const presignedRes = await fetch(
+        `${BASE_URL}/contracts/presigned-post-url/?file_type=docx&file_path=${encodeURIComponent(existingFilePath)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      if (!presignedRes.ok) {
+        throw new Error("Failed to get S3 upload URL");
+      }
+  
+      const { url, fields } = await presignedRes.json();
+  
+      // 🔹 Create FormData for S3 upload (overwrite existing file)
+      const formData = new FormData();
+      Object.entries(fields).forEach(([key, value]) => {
+        formData.append(key, value as string);
+      });
+      formData.append("file", fileBlob);
+  
+      // 🔹 Upload the file to Amazon S3
+      const uploadRes = await fetch(url, {
+        method: "POST",
+        body: formData,
+      });
+  
+      if (!uploadRes.ok) {
+        throw new Error("S3 upload failed");
+      }
+  
+      console.log("Edited DOCX file uploaded successfully!");
+  
+    } catch (error) {
+      console.error("Error uploading edited DOCX to S3:", error);
     }
   };
 
@@ -335,7 +465,7 @@ export default function ContractBuilderPage() {
       </div>
 
       {/* Always display the file in an iframe (treating it as PDF). */}
-      <div className="flex-1 mb-5">
+      <div className="flex-1 mb-5 max-h-[450px]">
         {pdfBlobUrl ? (
           <iframe
             src={pdfBlobUrl}
@@ -344,7 +474,10 @@ export default function ContractBuilderPage() {
             style={{ border: 0, minHeight: "600px" }}
           />
         ) : (
-          <div>No file loaded yet.</div>
+          <div id="docx-container" className="p-4 bg-white shadow-md rounded-lg min-h-[600px] h-full">
+
+            <p>Loading DOCX content...</p>
+          </div>
         )}
       </div>
     </div>
