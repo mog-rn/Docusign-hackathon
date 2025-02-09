@@ -62,24 +62,32 @@ export function CreateContractForm({ onSuccess, onCancel }: CreateContractFormPr
   const onSubmit = async (data: ContractFormData) => {
     try {
       setMessage("");
-
+  
       const token = document.cookie
         .split("; ")
         .find((row) => row.startsWith("authToken="))
         ?.split("=")[1];
-
+  
       let filePath = "";
-
+      let fileType = ""; // Store file type
+  
       if (data.fileOption === "template") {
         const templatePdf = await fetchTemplateFromBackend();
-        const presignedData = await getPresignedUrl(token);
+        fileType = "pdf"; // Templates are always PDFs
+        const presignedData = await getPresignedUrl(token, fileType);
         filePath = await uploadFileToS3(presignedData.url, presignedData.fields, templatePdf);
-
       } else if (data.fileOption === "upload" && data.file?.[0]) {
         const userFile = data.file[0];
-        const presignedData = await getPresignedUrl(token);
+  
+        // 🔹 Detect file type based on the MIME type
+        fileType = userFile.type.includes("pdf") ? "pdf" : "docx";
+  
+        // 🔹 Pass the file type to get the presigned URL
+        const presignedData = await getPresignedUrl(token, fileType);
         filePath = await uploadFileToS3(presignedData.url, presignedData.fields, userFile);
       }
+  
+      // 🔹 Include file_type when creating the contract
       const createResponse = await fetch(`${BASE_URL}/contracts/`, {
         method: "POST",
         headers: {
@@ -91,13 +99,14 @@ export function CreateContractForm({ onSuccess, onCancel }: CreateContractFormPr
           contract_type: data.contract_type,
           stage: data.stage || "draft",
           file_path: filePath,
+          file_type: fileType, // 🔹 Include file_type in contract creation
         }),
       });
-
+  
       if (!createResponse.ok) {
         throw new Error("Failed to create contract");
       }
-
+  
       const newContract = await createResponse.json();
       setMessage("Contract created successfully!");
       onSuccess(newContract);
@@ -105,21 +114,31 @@ export function CreateContractForm({ onSuccess, onCancel }: CreateContractFormPr
       console.error("Error creating contract:", error);
       setMessage("An error occurred. Please try again.");
     }
-  };
+  }; 
 
   // Helper: get presigned URL
-  const getPresignedUrl = async (token?: string) => {
-    const res = await fetch(`${BASE_URL}/contracts/presigned-post-url/`, {
-      method: "GET",
+ // Helper: get presigned URL
+const getPresignedUrl = async (token?: string, fileType?: string) => {
+  if (!fileType) {
+    throw new Error("File type is required but missing");
+  }
+
+  // 🔹 Include `file_type` as a query parameter
+  const res = await fetch(
+    `${BASE_URL}/contracts/presigned-post-url/?file_type=${fileType}`,
+    {
+      method: "GET", // Presigned POST URL is retrieved via GET
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    });
-    if (!res.ok) {
-      throw new Error("Failed to fetch pre-signed URL");
     }
-    return res.json(); // { url, fields }
-  };
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch pre-signed URL");
+  }
+  return res.json(); // { url, fields }
+}; 
 
   // Helper: upload file or blob to S3
   const uploadFileToS3 = async (

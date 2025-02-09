@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog";
 import { Contract, Counterparty } from "@/types/contracts";
 import { BASE_URL } from "@/constants";
+import * as docx from "docx-preview";
 
 export default function ContractBuilderPage() {
   const params = useParams();
@@ -50,9 +51,8 @@ export default function ContractBuilderPage() {
       console.error("No contract ID provided");
       return;
     }
-
+  
     try {
-      // 1) Fetch contract metadata
       const response = await fetch(`${BASE_URL}/contracts/${id}/`, {
         headers: {
           Authorization: `Bearer ${
@@ -63,14 +63,14 @@ export default function ContractBuilderPage() {
           }`,
         },
       });
-
+  
       if (!response.ok) {
         throw new Error("Failed to fetch contract details");
       }
-
+  
       const data = await response.json();
-
-      // 2) Get the presigned download URL
+  
+      // Fetch the presigned download URL
       const downloadResponse = await fetch(
         `${BASE_URL}/contracts/presigned-download-url/?file_path=${data.file_path}`,
         {
@@ -84,37 +84,66 @@ export default function ContractBuilderPage() {
           },
         }
       );
-
+  
       if (!downloadResponse.ok) {
         throw new Error("Failed to fetch presigned download URL");
       }
-
+  
       const downloadData = await downloadResponse.json();
-
-      // 3) Fetch the file as a Blob (treat all as PDF)
+  
+      // Fetch the file as a Blob
       const s3Response = await fetch(downloadData.url);
       if (!s3Response.ok) {
         throw new Error("Failed to download file content");
       }
-
+  
       const blob = await s3Response.blob();
-      // Log the blob so you see what file was fetched
-      console.log("Fetched file blob (treating as PDF):", blob);
-
-      // Create a temporary URL for the blob
-      const blobUrl = URL.createObjectURL(blob);
-      setPdfBlobUrl(blobUrl);
+      console.log("Fetched file blob:", blob);
+  
       setFileBlob(blob);
-
-      // Store the rest of the contract info
-      setContract({
-        ...data,
-        content: "",
-      });
+      setContract({ ...data, content: "" });
+  
+      // 🔹 Fix MIME Type Detection
+      let fileType = blob.type;
+      if (!fileType || fileType === "docx") {
+        console.warn("Invalid or missing MIME type, defaulting to DOCX.");
+        fileType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      }
+  
+      if (fileType === "application/pdf") {
+        const blobUrl = URL.createObjectURL(blob);
+        setPdfBlobUrl(blobUrl);
+      } else if (fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
+        renderDocx(blob);
+      } else {
+        console.warn("Unsupported file type:", fileType);
+      }
     } catch (error) {
       console.error("Error fetching contract:", error);
     }
-  }, [id]);
+  }, [id]); 
+
+  const renderDocx = async (docxBlob: Blob) => {
+    try {
+      const arrayBuffer = await docxBlob.arrayBuffer();
+      const container = document.getElementById("docx-container");
+  
+      if (!container) {
+        console.error("DOCX container not found");
+        return;
+      }
+  
+      container.innerHTML = ""; // Clear previous content
+  
+      await docx.renderAsync(arrayBuffer, container as HTMLElement, undefined, {
+        className: "docx-rendered-content", // Add a class to style the rendered content
+      });
+
+      container.classList.add("max-h-[450px]", "overflow-auto");
+    } catch (error) {
+      console.error("Error rendering DOCX:", error);
+    }
+  };
 
   // Clean up object URL
   useEffect(() => {
@@ -335,7 +364,7 @@ export default function ContractBuilderPage() {
       </div>
 
       {/* Always display the file in an iframe (treating it as PDF). */}
-      <div className="flex-1 mb-5">
+      <div className="flex-1 mb-5 max-h-[450px]">
         {pdfBlobUrl ? (
           <iframe
             src={pdfBlobUrl}
@@ -344,7 +373,10 @@ export default function ContractBuilderPage() {
             style={{ border: 0, minHeight: "600px" }}
           />
         ) : (
-          <div>No file loaded yet.</div>
+          <div id="docx-container" className="p-4 bg-white shadow-md rounded-lg min-h-[600px] h-full">
+
+            <p>Loading DOCX content...</p>
+          </div>
         )}
       </div>
     </div>
