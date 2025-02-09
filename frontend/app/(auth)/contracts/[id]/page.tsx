@@ -22,7 +22,8 @@ import {
 } from "@/components/ui/dialog";
 import { Contract, Counterparty } from "@/types/contracts";
 import { BASE_URL } from "@/constants";
-import * as docx from "docx-preview";
+import { Document, Packer, Paragraph } from "docx"
+import mammoth from "mammoth";
 
 export default function ContractBuilderPage() {
   const params = useParams();
@@ -135,11 +136,26 @@ export default function ContractBuilderPage() {
   
       container.innerHTML = ""; // Clear previous content
   
-      await docx.renderAsync(arrayBuffer, container as HTMLElement, undefined, {
-        className: "docx-rendered-content", // Add a class to style the rendered content
-      });
-
-      container.classList.add("max-h-[450px]", "overflow-auto");
+      // 🔹 Convert DOCX to plain text (instead of HTML) to preserve structure
+      const result = await mammoth.extractRawText({ arrayBuffer });
+  
+      // Render as an editable `<textarea>` (instead of `contentEditable`)
+      container.innerHTML = `
+        <textarea id="editable-docx" class="border p-4 rounded bg-white w-full h-full max-h-[450px] overflow-auto">${result.value}</textarea>
+        <button id="save-docx-btn"
+          class="mt-4 bg-blue-500 text-white py-2 px-4 rounded w-full">
+          Save Edited DOCX
+        </button>
+      `;
+  
+      // Wait for DOM update, then attach event listener
+      setTimeout(() => {
+        const saveButton = document.getElementById("save-docx-btn");
+        if (saveButton) {
+          saveButton.addEventListener("click", saveEditedDocx);
+        }
+      }, 100);
+  
     } catch (error) {
       console.error("Error rendering DOCX:", error);
     }
@@ -248,6 +264,91 @@ export default function ContractBuilderPage() {
       console.log("Currently loaded file (treated as PDF) blob:", fileBlob);
     } else {
       console.log("No file blob currently loaded.");
+    }
+  };
+
+  const saveEditedDocx = async () => {
+    const textarea = document.getElementById("editable-docx") as HTMLTextAreaElement;
+    if (!textarea) {
+      console.error("Editable DOCX container not found");
+      return;
+    }
+  
+    const editedText = textarea.value; // 🔹 Extract raw text
+  
+    // 🔹 Convert back to structured DOCX format
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: editedText.split("\n").map((line) => new Paragraph(line)), // Convert each line to a paragraph
+        },
+      ],
+    });
+  
+    const docxBlob = await Packer.toBlob(doc);
+  
+    try {
+      if (!contract?.file_path) {
+        throw new Error("No existing file path found for this contract.");
+      }
+  
+      await uploadEditedDocxToS3(docxBlob, contract.file_path);
+      console.log("Edited DOCX file successfully uploaded and replaced!");
+    } catch (error) {
+      console.error("Error uploading edited DOCX:", error);
+    }
+  };
+
+  const uploadEditedDocxToS3 = async (fileBlob: Blob, existingFilePath: string) => {
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("authToken="))
+        ?.split("=")[1];
+  
+      if (!token) {
+        throw new Error("User authentication token missing");
+      }
+  
+      // 🔹 Request a presigned upload URL for the existing file
+      const presignedRes = await fetch(
+        `${BASE_URL}/contracts/presigned-post-url/?file_type=docx&file_path=${encodeURIComponent(existingFilePath)}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+  
+      if (!presignedRes.ok) {
+        throw new Error("Failed to get S3 upload URL");
+      }
+  
+      const { url, fields } = await presignedRes.json();
+  
+      // 🔹 Create FormData for S3 upload (overwrite existing file)
+      const formData = new FormData();
+      Object.entries(fields).forEach(([key, value]) => {
+        formData.append(key, value as string);
+      });
+      formData.append("file", fileBlob);
+  
+      // 🔹 Upload the file to Amazon S3
+      const uploadRes = await fetch(url, {
+        method: "POST",
+        body: formData,
+      });
+  
+      if (!uploadRes.ok) {
+        throw new Error("S3 upload failed");
+      }
+  
+      console.log("Edited DOCX file uploaded successfully!");
+  
+    } catch (error) {
+      console.error("Error uploading edited DOCX to S3:", error);
     }
   };
 
