@@ -14,7 +14,7 @@ class S3:
                                    config=Config(signature_version='s3v4'))
         self.expiresIn = settings.AWS_PRESIGNED_EXPIRY
 
-    def generate_presigned_post_url(self, key=None):
+    def generate_presigned_post_url(self, file_type, key=None):
         try:
             current_time = datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S') 
             object_name = f'{uuid.uuid4()}_{current_time}'
@@ -23,6 +23,8 @@ class S3:
             response = self.client.generate_presigned_post(
                 bucket_name,
                 object_name if key is None else key,
+                Fields={"Content-Type": file_type},
+                Conditions=[{"Content-Type": file_type}],
                 ExpiresIn=self.expiresIn
             )
             return response
