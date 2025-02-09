@@ -29,7 +29,7 @@ jobs:
         image: postgres:15
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_PASSWORD: ${{secrets.POSTGRES_PASSWORD}} 
           POSTGRES_DB: test_db
         ports:
           - 5432:5432
@@ -68,9 +68,16 @@ jobs:
               
       - name: Build and Push Container
         run: |
-          docker build -t "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE:$GITHUB_SHA" -f Dockerfile .
+          docker build \
+            --build-arg AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+            --build-arg AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+            --build-arg AWS_STORAGE_BUCKET_NAME="${{ secrets.AWS_STORAGE_BUCKET_NAME }}" \
+            --build-arg AWS_S3_REGION_NAME="${{ secrets.AWS_S3_REGION_NAME }}" \
+            --build-arg AWS_PRESIGNED_EXPIRY="${{ secrets.AWS_PRESIGNED_EXPIRY }}" \
+            -t "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE:$GITHUB_SHA" \
+            -f Dockerfile .
           docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE:$GITHUB_SHA"
-      
+ 
       - name: Debug Static Files
         run: |
           echo "Current directory contents:"
@@ -134,6 +141,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
           CSRF_TRUSTED_ORIGINS: ${{ secrets.CSRF_TRUSTED_ORIGINS }}
+          CORS_ALLOWED_ORIGINS: ${{ secrets.CORS_ALLOWED_ORIGINS }}
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           DEFAULT_FROM_EMAIL: ${{ secrets.DEFAULT_FROM_EMAIL }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
@@ -160,6 +168,7 @@ jobs:
             --set-env-vars ^--^DJANGO_SETTINGS_MODULE="$DJANGO_SETTINGS_MODULE" \
             --set-env-vars ^--^ALLOWED_HOSTS="$ALLOWED_HOSTS" \
             --set-env-vars ^--^CSRF_TRUSTED_ORIGINS="$CSRF_TRUSTED_ORIGINS" \
+            --set-env-vars ^--^CORS_ALLOWED_ORIGINS="$CORS_ALLOWED_ORIGINS" \
             --set-env-vars ^--^SENDGRID_API_KEY="$SENDGRID_API_KEY" \
             --set-env-vars ^--^DEFAULT_FROM_EMAIL="$DEFAULT_FROM_EMAIL" \
             --set-env-vars ^--^FRONTEND_URL="$FRONTEND_URL" \

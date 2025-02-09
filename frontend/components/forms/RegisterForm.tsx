@@ -1,6 +1,5 @@
 'use client';
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -26,9 +25,8 @@ const formSchema = z
     path: ["confirmPassword"], // Specify the field to show the error
   });
 
-export function RegisterForm() {
+export function RegisterForm({onNext}: {onNext: () => void}) {
   const [registerMessage, setRegisterMessage] = useState("");
-  const router = useRouter();
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -57,14 +55,12 @@ export function RegisterForm() {
       if (response.ok) {
         const result = await response.json();
 
-        // Store the tokens in cookies
         document.cookie = `authToken=${result.access}; path=/;`;
         document.cookie = `refreshToken=${result.refresh}; path=/;`;
 
         setRegisterMessage("Registration successful!");
 
-        // Redirect to the login page or dashboard
-        router.push("/login"); // Redirect to the login page
+        onNext();
       } else {
         const errorData = await response.json();
         setRegisterMessage(errorData.message || "Registration failed");

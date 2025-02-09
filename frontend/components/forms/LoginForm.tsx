@@ -8,6 +8,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { BASE_URL } from "@/constants";
 import { useRouter } from "next/navigation";
+import { useOrganizations } from "@/hooks/useOrganization";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email format"),
@@ -18,6 +19,7 @@ const formSchema = z.object({
 
 export function LoginForm() {
   const [loginMessage, setLoginMessage] = useState("");
+  const organizations = useOrganizations();
 
   const router = useRouter();
 
