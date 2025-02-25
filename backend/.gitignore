@@ -11,3 +11,5 @@ esignature
 123.pdf
 private.key
 logs/
+
+.DS_Store
