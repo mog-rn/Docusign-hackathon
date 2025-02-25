@@ -1,3 +1,4 @@
+import logging
 from authentication.models import Invitation
 from authentication.serializers import InvitationSerializer
 from authentication.utils import login_response_constructor, send_invitation_email
@@ -11,6 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.serializers import UserSerializer
 
+logger = logging.getLogger(__name__)
 
 class RegisterView(generics.CreateAPIView):
     """
@@ -89,11 +91,11 @@ class InviteUserView(generics.CreateAPIView):
                 invitation.email_sent = False
                 invitation.save(update_fields=["email_sent"])
 
+                logger.error(f"Error sending invitation email: {str(e)}", exc_info=True)
                 return Response(
                     {
                         "message": "Invitation created but email failed to send",
                         "email_sent": False,
-                        "error": str(e),
                         "invitation": serializer.data,
                     },
                     status=status.HTTP_201_CREATED,
@@ -115,8 +117,9 @@ class InviteUserView(generics.CreateAPIView):
             raise
 
         except Exception as e:
+            logger.error(f"Error accepting invitation: {str(e)}", exc_info=True)
             return Response(
-                {"message": "Failed to create invitation", "error": str(e)},
+                {"message": "Failed to create invitation"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
