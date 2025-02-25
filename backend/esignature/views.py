@@ -11,6 +11,30 @@ from rest_framework.views import APIView
 
 
 class SendContractForSigning(APIView):
+    """
+    Send a contract for electronic signing.
+    
+    This endpoint allows an authenticated user with organization admin permissions
+    to send a contract for signing. It validates the request data, ensures the contract
+    belongs to the user's organization, prepares the envelope data, and submits it
+    to the e-signature API.
+    
+    Methods:
+        post(request, format=None):
+            - Validates the request data using EnvelopeDataSerializer.
+            - Retrieves the contract and checks organization ownership.
+            - Prepares envelope data and sends it via the signature API.
+            - Updates contract status to "sign_pending" upon successful submission.
+    
+    Permissions:
+        - Requires authentication.
+        - Requires the user to be an organization admin.
+    
+    Responses:
+        - 200: Contract successfully sent.
+        - 400: Contract could not be sent.
+        - 403: Contract does not belong to the user's organization.
+    """
     permission_classes = [IsAuthenticated, IsOrganizationAdmin]
 
     def post(self, request, format=None):
