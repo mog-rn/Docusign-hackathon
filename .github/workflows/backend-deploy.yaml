@@ -90,14 +90,14 @@ jobs:
             -f Dockerfile .
           docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$SERVICE/$SERVICE:$GITHUB_SHA"
 
-          - name: Debug Static Files
-          run: |
-            echo "Current directory contents:"
-            ls -la
-            echo "\nStatic directory contents:"
-            ls -la static/ || echo "No static directory"
-            echo "\nStaticfiles directory contents:"
-            ls -la staticfiles/ || echo "No staticfiles directory"
+      - name: Debug Static Files
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "\nStatic directory contents:"
+          ls -la static/ || echo "No static directory"
+          echo "\nStaticfiles directory contents:"
+          ls -la staticfiles/ || echo "No staticfiles directory"
   
       - name: Copy Static Files from Docker Container
         run: |
