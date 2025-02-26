@@ -8,3 +8,5 @@ todo.md
 sendgrid.env
 .env
 /logs/
+
+.DS_Store

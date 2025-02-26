@@ -80,3 +80,4 @@ def send_invitation_email(invitation, invitation_url):
     except Exception as e:
         print(f"Failed to send invitation email: {str(e)}")
         raise
+    
