@@ -25,14 +25,6 @@ class ContractListCreateView(generics.ListCreateAPIView):
             "counterparties"
         )
 
-    def list(self, request, *args, **kwargs):
-        """
-        List contracts for organization.
-        """
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
     def create(self, request, *args, **kwargs):
         """
         Create a new contract.
