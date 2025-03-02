@@ -7,12 +7,17 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
+from django.utils import timezone
+from django.conf import settings
+from authentication.utils import send_invitation_email
+
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from users.serializers import UserSerializer
 
 logger = logging.getLogger(__name__)
+
 
 class RegisterView(generics.CreateAPIView):
     """
@@ -32,7 +37,9 @@ class RegisterView(generics.CreateAPIView):
             refresh_token = str(refresh)
             token_pair = {"access": access_token, "refresh": refresh_token}
 
-            return Response(token_pair, status=status.HTTP_201_CREATED)
+            response = Response(token_pair, status=status.HTTP_201_CREATED)
+
+            return response
         else:
             errors = serializer.errors
             email_errors = errors.get("email", None)
