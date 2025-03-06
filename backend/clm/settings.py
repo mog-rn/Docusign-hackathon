@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "organizations",
     "contracts",
     "counterparties",
+    "esignature",
 ]
 
 AUTH_USER_MODEL = "users.User"
@@ -121,7 +122,7 @@ STATIC_URL = "/static/"
 
 if DEBUG:
     STATICFILES_DIRS = [BASE_DIR / "static"]
-    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 else:
     GS_BUCKET_NAME = os.getenv("GS_BUCKET_NAME", "clm-static-assets")
     STATICFILES_STORAGE = "storages.backends.gcloud.GoogleCloudStorage"
@@ -159,6 +160,7 @@ USE_X_FORWARDED_PORT = True
 
 CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_SECURE = not DEBUG
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "localhost").split(",")
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -186,6 +188,7 @@ if DEBUG:
     ]
 
 # JWT Configuration
+# todo: set a shorter token lifetime
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
@@ -229,8 +232,14 @@ LOGGING = {
     },
 }
 
+
+# AWS S3 Configuration
+
 AWS_ACCESS_KEY_ID = os.getenv("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.getenv("AWS_STORAGE_BUCKET_NAME")
 AWS_S3_REGION_NAME = os.getenv("AWS_S3_REGION_NAME")
-AWS_PRESIGNED_EXPIRY = int(os.getenv("AWS_PRESIGNED_EXPIRY", 3600))  # Default 1 hour
+AWS_PRESIGNED_EXPIRY = int(os.getenv("AWS_PRESIGNED_EXPIRY"))
+
+# signatureAPI configuration
+SIGNATUREAPI_API_KEY = os.getenv("SIGNATUREAPI_API_KEY")

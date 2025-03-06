@@ -1,9 +1,10 @@
-from rest_framework import generics, status
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from core.permissions import IsOrganizationAdmin, IsMainAdmin
+from core.permissions import IsMainAdmin, IsOrganizationAdmin
+from organizations.models import Organization, Role, UserRole
 from organizations.serializers import OrganizationSerializer
-from organizations.models import Organization, UserRole, Role
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
 
 class OrganizationListCreateView(generics.ListCreateAPIView):
     """
@@ -14,6 +15,7 @@ class OrganizationListCreateView(generics.ListCreateAPIView):
       If not, it associates the user with the new organization and assigns them
       an admin role within that organization, unless the user is a Django superuser.
     """
+
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
     permission_classes = [IsAuthenticated]
@@ -28,9 +30,9 @@ class OrganizationListCreateView(generics.ListCreateAPIView):
         if user.organization:
             return Response(
                 {"message": "User already belongs to an organization."},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         serializer = self.get_serializer(data=request.data)
 
         if serializer.is_valid():
@@ -45,22 +47,22 @@ class OrganizationListCreateView(generics.ListCreateAPIView):
                     name="admin",
                     organization=organization,
                     defaults={
-                        'permissions': {
+                        "permissions": {
                             "can_invite": True,
                             "can_manage_users": True,
                             "can_manage_roles": True,
                             "can_manage_permissions": True,
                             "can_manage_organization": True,
-                            "is_organization_admin": True
+                            "is_organization_admin": True,
                         }
-                    }
+                    },
                 )
 
                 UserRole.objects.create(user=user, role=admin_role)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def list(self, request, *args, **kwargs):
         """
         List all organizations, accessible only to superusers.
@@ -69,7 +71,7 @@ class OrganizationListCreateView(generics.ListCreateAPIView):
         if not user.is_superuser:
             return Response(
                 {"message": "You do not have permission to perform this action."},
-                status=status.HTTP_403_FORBIDDEN
+                status=status.HTTP_403_FORBIDDEN,
             )
         return super().list(request, *args, **kwargs)
 
@@ -80,6 +82,7 @@ class OrganizationRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIVie
 
     User must be either an organization admin or a Django superuser to access this view.
     """
+
     permission_classes = [IsAuthenticated, IsOrganizationAdmin | IsMainAdmin]
     queryset = Organization.objects.all()
     serializer_class = OrganizationSerializer
