@@ -34,7 +34,11 @@ class Role(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        unique_together = ["name", "organization"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["name", "organization"], name="unique_organization_role"
+            )
+        ]
 
     def __str__(self):
         return self.name
@@ -51,3 +55,8 @@ class UserRole(models.Model):
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     assigned_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "role"], name="unique_user_role")
+        ]
