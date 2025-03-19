@@ -63,7 +63,7 @@ class SendContractForSigning(APIView):
 
         if (
             response.status_code != 201
-        ):  # if there was an error foward the error response from signatureAPI to frontend
+        ):  # if there was an error forward the error response from signatureAPI to frontend
             return Response(
                 response.json(),
                 status=response.status_code,  # if 422 it is mostly a validation error

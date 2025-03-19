@@ -126,7 +126,7 @@ export default function ContractBuilderPage() {
       console.error("Editable DOCX container not found");
       return;
     }
-    const placeholderText = "<<sign_here_0>>"; // Marker that SignatureAPI expects
+    const placeholderText = "[[sign_here_0]]";
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const text = textarea.value;
