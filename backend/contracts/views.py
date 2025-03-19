@@ -25,14 +25,6 @@ class ContractListCreateView(generics.ListCreateAPIView):
             "counterparties"
         )
 
-    def list(self, request, *args, **kwargs):
-        """
-        List contracts for organization.
-        """
-        queryset = self.get_queryset()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
     def create(self, request, *args, **kwargs):
         """
         Create a new contract.
@@ -103,11 +95,12 @@ class ContractRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
         """
         Update a contract.
         """
+        user = request.user
         contract = self.check_organization_and_get_contract(request)
         partial = kwargs.pop("partial", False)
         serializer = self.get_serializer(contract, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        serializer.save(last_modified_by=user)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
