@@ -24,7 +24,7 @@
     "clsx": "^2.1.1",
     "docx": "^9.1.1",
     "docx-preview": "^0.3.4",
-    "jose": "^5.9.6",
+    "jose": "^6.0.10",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.482.0",
     "mammoth": "^1.9.0",
