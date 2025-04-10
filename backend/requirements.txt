@@ -27,7 +27,7 @@ djangorestframework==3.15.2
 djangorestframework_simplejwt==5.4.0
 drf-yasg==1.21.8
 executing==2.2.0
-filelock==3.16.1
+filelock==3.18.0
 Flask==3.1.0
 Flask-Cors==5.0.0
 Flask-JWT-Extended==4.7.1
